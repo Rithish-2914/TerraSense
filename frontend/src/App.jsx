@@ -366,7 +366,7 @@ function App() {
     };
   }, [simulationData, stormIntensity]);
 
-  // Compute active GeoJSON overlay polygon (Memoized)
+  // Compute active GeoJSON overlay polygon with 3 Distinct Hazard Tiers (Memoized)
   const currentOverlay = useMemo(() => {
     if (!showOverlay || !simulationData) return null;
     
@@ -384,36 +384,120 @@ function App() {
         const halfSpanLon = Math.max((maxLon - minLon) / 2, 0.003);
         const halfSpanLat = Math.max((maxLat - minLat) / 2, 0.003);
         
+        // Base scale expands with storm rainfall (50mm -> 0.20, 180mm -> 0.52, 350mm -> 0.90)
         let scale = Math.min(0.95, Math.max(0.18, 0.18 + ((stormIntensity - 50) / 300) * 0.72));
-        
+        let baseDepth = Math.max(0.2, (stormIntensity / 220) * 1.35);
+
         if (mitigationReductionPct > 0) {
           scale = Math.max(0.12, scale * (1 - (mitigationReductionPct / 100) * 0.5));
+          baseDepth = baseDepth * (1 - (mitigationReductionPct / 100) * 0.65);
         }
         
-        const bufLon = halfSpanLon * scale;
-        const bufLat = halfSpanLat * scale;
-        
-        return {
-          type: "FeatureCollection",
-          features: [{
+        const isMitigated = mitigationReductionPct > 30;
+
+        // Helper to generate rectangular / polygonal rings
+        const makeBox = (s) => {
+          const bLon = halfSpanLon * s;
+          const bLat = halfSpanLat * s;
+          return [[
+            [centerLon - bLon, centerLat - bLat],
+            [centerLon + bLon, centerLat - bLat],
+            [centerLon + bLon, centerLat + bLat],
+            [centerLon - bLon, centerLat + bLat],
+            [centerLon - bLon, centerLat - bLat]
+          ]];
+        };
+
+        const features = isMitigated ? [
+          {
             type: "Feature",
             properties: {
-              name: `Storm (${stormIntensity}mm) Inundation Zone`,
-              risk_level: stormIntensity > 260 ? 'Severe Flash Flood (Cloudburst)' : stormIntensity > 150 ? 'High Flood Inundation' : 'Moderate Inundation',
-              depth_m: (Math.max(0.1, (stormIntensity / 250) * 0.85)).toFixed(2),
-              data_source: "SCS_Live_Calculation"
+              name: `Green Infrastructure Buffer (${stormIntensity}mm)`,
+              risk_tier: `Mitigated Eco Buffer (-${mitigationReductionPct}% Runoff)`,
+              depth_m: (baseDepth * 0.4).toFixed(2),
+              fill_color: "#10B981",
+              stroke_color: "#059669",
+              fill_opacity: 0.35,
+              tier: "mitigated"
             },
             geometry: {
               type: "Polygon",
-              coordinates: [[
-                [centerLon - bufLon, centerLat - bufLat],
-                [centerLon + bufLon, centerLat - bufLat],
-                [centerLon + bufLon, centerLat + bufLat],
-                [centerLon - bufLon, centerLat + bufLat],
-                [centerLon - bufLon, centerLat - bufLat]
-              ]]
+              coordinates: makeBox(scale * 0.8)
             }
-          }]
+          },
+          {
+            type: "Feature",
+            properties: {
+              name: `Controlled Infiltration & Storage Core`,
+              risk_tier: `Infiltration Swale (-${mitigationReductionPct}% Peak Flow)`,
+              depth_m: (baseDepth * 0.2).toFixed(2),
+              fill_color: "#059669",
+              stroke_color: "#047857",
+              fill_opacity: 0.50,
+              tier: "mitigated_core"
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: makeBox(scale * 0.4)
+            }
+          }
+        ] : [
+          // Tier 1: Outer Band - Minor Waterlogging (<0.5m, Yellow)
+          {
+            type: "Feature",
+            properties: {
+              name: `Outer Inundation Fringe (${stormIntensity}mm)`,
+              risk_tier: "Minor Waterlogging (<0.5m)",
+              depth_m: (baseDepth * 0.35).toFixed(2),
+              fill_color: "#EAB308",
+              stroke_color: "#CA8A04",
+              fill_opacity: 0.30,
+              tier: "minor"
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: makeBox(scale * 1.0)
+            }
+          },
+          // Tier 2: Middle Band - Moderate Inundation (0.5m - 1.2m, Orange)
+          {
+            type: "Feature",
+            properties: {
+              name: `Intermediate Floodplain (${stormIntensity}mm)`,
+              risk_tier: "Moderate Inundation (0.5m - 1.2m)",
+              depth_m: (baseDepth * 0.65).toFixed(2),
+              fill_color: "#F97316",
+              stroke_color: "#EA580C",
+              fill_opacity: 0.48,
+              tier: "moderate"
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: makeBox(scale * 0.65)
+            }
+          },
+          // Tier 3: Core Depression - Critical Hazard (>1.2m, Red)
+          {
+            type: "Feature",
+            properties: {
+              name: `Catchment Depressional Sink (${stormIntensity}mm)`,
+              risk_tier: "Critical Hazard (>1.2m)",
+              depth_m: baseDepth.toFixed(2),
+              fill_color: "#EF4444",
+              stroke_color: "#DC2626",
+              fill_opacity: 0.62,
+              tier: "critical"
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: makeBox(scale * 0.35)
+            }
+          }
+        ];
+
+        return {
+          type: "FeatureCollection",
+          features: features
         };
       }
     }

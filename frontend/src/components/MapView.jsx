@@ -683,9 +683,22 @@ const MapView = ({
     return { leftGeoJson, rightGeoJson };
   }, [splitViewActive, overlayData, curtainPosition]);
 
-  const getOverlayStyle = useMemo(() => {
+  const getOverlayStyle = useCallback((feature) => {
     if (mitigationReductionPct > 30) {
-      return mapStyles.floodRiskMitigated;
+      return {
+        color: '#059669',
+        weight: 2.5,
+        fillOpacity: feature?.properties?.fill_opacity || 0.40,
+        fillColor: '#10B981'
+      };
+    }
+    if (feature && feature.properties && feature.properties.fill_color) {
+      return {
+        color: feature.properties.stroke_color || feature.properties.fill_color,
+        weight: 2,
+        fillOpacity: feature.properties.fill_opacity !== undefined ? feature.properties.fill_opacity : 0.45,
+        fillColor: feature.properties.fill_color
+      };
     }
     if (scenario === 'baseline') {
       return mapStyles.floodRiskBaseline;
@@ -699,19 +712,22 @@ const MapView = ({
   const onEachOverlayFeature = (feature, layer) => {
     if (feature && feature.properties) {
       const name = feature.properties.name || 'Climate Risk Zone';
-      const risk = mitigationReductionPct > 0 
-        ? `Mitigated Risk (-${mitigationReductionPct}% via Sandbox)` 
-        : (feature.properties.risk_level || 'Active Risk');
+      const tier = feature.properties.risk_tier || feature.properties.risk_level || 'Flood Risk';
       const depth = feature.properties.depth_m !== undefined ? `${feature.properties.depth_m}m` : 'Calculated';
+      const color = feature.properties.fill_color || (mitigationReductionPct > 30 ? '#10B981' : '#EF4444');
       
       layer.bindPopup(`
-        <div style="font-family: 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.5; min-width: 170px;">
-          <strong style="color: #07173F; font-size: 14px;">${name}</strong><br/>
-          <span style="color: ${mitigationReductionPct > 30 ? '#27AE60' : '#E43700'}; font-weight: 700;">
-            ${mitigationReductionPct > 30 ? '🛡️ ' : '⚠️ '} ${risk}
-          </span><br/>
-          <span style="color: #555;">Estimated Water Depth: <strong>${depth}</strong></span>
-          ${mitigationReductionPct > 0 ? `<br/><span style="color: #00875A; font-weight: 600; font-size: 11px;">Green Infrastructure Active</span>` : ''}
+        <div style="font-family: 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.5; min-width: 190px;">
+          <div style="display: inline-block; background: ${color}20; color: ${color}; border: 1px solid ${color}80; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 4px; margin-bottom: 4px;">
+            ${tier.toUpperCase()}
+          </div>
+          <strong style="color: #07173F; font-size: 13.5px; display: block;">${name}</strong>
+          <div style="color: #333; margin-top: 4px;">
+            Estimated Water Depth: <strong style="color: ${color}; font-size: 14px;">${depth}</strong>
+          </div>
+          <div style="font-size: 11px; color: #64748B; margin-top: 4px; border-top: 1px solid #E2E8F0; padding-top: 4px;">
+            ${mitigationReductionPct > 0 ? `🛡️ Green Sandbox Active (-${mitigationReductionPct}%)` : `⚠️ USDA SCS-CN 3-Tier Model`}
+          </div>
         </div>
       `);
     }
