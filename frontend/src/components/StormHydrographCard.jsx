@@ -1,66 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 const StormHydrographCard = ({ rainIntensity = 180, mitigationPct = 0 }) => {
   const [hoveredHour, setHoveredHour] = useState(null);
 
-  // Generate 24-hour hydrograph curve data dynamically based on rainfall & mitigation
-  const hours = Array.from({ length: 24 }, (_, i) => i + 1);
-
-  // Base storm peak scaling factor
-  const stormFactor = rainIntensity / 180;
-  
-  // Peak reduction multiplier from sandbox mitigation
-  const attenuationFactor = 1 - (Math.min(65, mitigationPct || 40) / 100) * 0.75;
-
-  const dataPoints = hours.map((hour) => {
-    // Hyetograph (Rainfall Intensity mm/h) - concentrated between hours 4 and 9
-    let rainMmH = 0;
-    if (hour >= 4 && hour <= 9) {
-      const center = 6.5;
-      rainMmH = Math.max(0, Math.round(35 * stormFactor * Math.exp(-Math.pow(hour - center, 2) / 2.5)));
-    }
-
-    // Inflow Hydrograph (Unmitigated discharge m3/s) - peaks at hour 8
-    const inflowCenter = 8.0;
-    const peakInflow = 42 * stormFactor;
-    const inflowQ = Math.max(2, parseFloat((peakInflow * Math.exp(-Math.pow(hour - inflowCenter, 2) / 6.5)).toFixed(1)));
-
-    // Outflow Hydrograph (Mitigated retention discharge m3/s) - peaks at hour 11.5 (attenuated & delayed)
-    const outflowCenter = 11.5;
-    const peakOutflow = 18 * stormFactor * attenuationFactor;
-    const outflowQ = Math.max(1.5, parseFloat((peakOutflow * Math.exp(-Math.pow(hour - outflowCenter, 2) / 14.0)).toFixed(1)));
-
-    return {
-      hour,
-      rainMmH,
-      inflowQ,
-      outflowQ
-    };
-  });
-
-  const maxQ = Math.max(...dataPoints.map(d => Math.max(d.inflowQ, d.outflowQ)), 50);
   const chartHeight = 160;
   const chartWidth = 460;
   const padding = 30;
 
-  // Coordinate mappers
+  // Generate 24-hour hydrograph curve data dynamically based on rainfall & mitigation (Memoized)
+  const { dataPoints, maxQ, inflowPath, outflowPath } = useMemo(() => {
+    const hours = Array.from({ length: 24 }, (_, i) => i + 1);
+    const stormFactor = rainIntensity / 180;
+    const attenuationFactor = 1 - (Math.min(65, mitigationPct || 40) / 100) * 0.75;
+
+    const points = hours.map((hour) => {
+      let rainMmH = 0;
+      if (hour >= 4 && hour <= 9) {
+        const center = 6.5;
+        rainMmH = Math.max(0, Math.round(35 * stormFactor * Math.exp(-Math.pow(hour - center, 2) / 2.5)));
+      }
+
+      const inflowCenter = 8.0;
+      const peakInflow = 42 * stormFactor;
+      const inflowQ = Math.max(2, parseFloat((peakInflow * Math.exp(-Math.pow(hour - inflowCenter, 2) / 6.5)).toFixed(1)));
+
+      const outflowCenter = 11.5;
+      const peakOutflow = 18 * stormFactor * attenuationFactor;
+      const outflowQ = Math.max(1.5, parseFloat((peakOutflow * Math.exp(-Math.pow(hour - outflowCenter, 2) / 14.0)).toFixed(1)));
+
+      return { hour, rainMmH, inflowQ, outflowQ };
+    });
+
+    const calculatedMaxQ = Math.max(...points.map(d => Math.max(d.inflowQ, d.outflowQ)), 50);
+
+    const getXCoord = (h) => padding + ((h - 1) / 23) * (chartWidth - padding * 2);
+    const getYCoord = (v) => chartHeight - padding - (v / calculatedMaxQ) * (chartHeight - padding * 2);
+
+    const iPath = points.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getXCoord(d.hour)} ${getYCoord(d.inflowQ)}`).join(' ');
+    const oPath = points.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getXCoord(d.hour)} ${getYCoord(d.outflowQ)}`).join(' ');
+
+    return { dataPoints: points, maxQ: calculatedMaxQ, inflowPath: iPath, outflowPath: oPath };
+  }, [rainIntensity, mitigationPct]);
+
   const getX = (hour) => padding + ((hour - 1) / 23) * (chartWidth - padding * 2);
   const getY = (val) => chartHeight - padding - (val / maxQ) * (chartHeight - padding * 2);
-
-  // Path generators
-  const inflowPath = dataPoints.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(d.hour)} ${getY(d.inflowQ)}`).join(' ');
-  const outflowPath = dataPoints.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(d.hour)} ${getY(d.outflowQ)}`).join(' ');
 
   const activePoint = hoveredHour !== null ? dataPoints[hoveredHour - 1] : null;
 
   return (
     <div style={{
-      background: 'rgba(255, 255, 255, 0.95)',
-      backdropFilter: 'blur(16px)',
+      background: '#FFFFFF',
       borderRadius: '16px',
       padding: '18px 20px',
       border: '1px solid rgba(7, 23, 63, 0.1)',
-      boxShadow: '0 8px 24px rgba(7, 23, 63, 0.08)',
+      boxShadow: '0 8px 24px rgba(7, 23, 63, 0.06)',
       marginTop: '16px'
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>

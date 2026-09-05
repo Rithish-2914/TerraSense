@@ -115,15 +115,19 @@ const InterventionsSection = ({ interventions, loading, simulationData, onMitiga
   const basePeopleAtRisk = simulationData?.metrics?.scenario_people || 1500;
   const peopleProtected = Math.round(basePeopleAtRisk * (totalReductionPct / 100));
 
-  // Notify parent of mitigation level
+  // Notify parent of mitigation level only when value changes
+  const prevReductionRef = React.useRef(-1);
   useEffect(() => {
-    if (onMitigationChange) {
-      onMitigationChange({
-        totalReductionPct,
-        activeCount: selectedIndices.length
-      });
+    if (prevReductionRef.current !== totalReductionPct) {
+      prevReductionRef.current = totalReductionPct;
+      if (onMitigationChange) {
+        onMitigationChange({
+          totalReductionPct,
+          activeCount: selectedIndices.length
+        });
+      }
     }
-  }, [totalReductionPct, selectedIndices, onMitigationChange]);
+  }, [totalReductionPct, selectedIndices.length, onMitigationChange]);
 
   if (!interventions || interventions.length === 0) return null;
 

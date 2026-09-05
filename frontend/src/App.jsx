@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import MapView from './components/MapView';
 import FloatingPanel from './components/FloatingPanel';
 import FloatingButton from './components/FloatingButton';
@@ -114,7 +114,7 @@ function App() {
         properties: {name: "Trichy Pilot Ward"},
         geometry: {
           type: "Polygon",
-          coordinates: [[[80.27,13.07],[80.28,13.07],[80.28,13.08],[80.27,13.08],[80.27,13.07]]]
+          coordinates: [[[78.68,10.78],[78.72,10.78],[78.72,10.82],[78.68,10.82],[78.68,10.78]]]
         }
       }]
     };
@@ -125,6 +125,10 @@ function App() {
   const [showIntroPopup, setShowIntroPopup] = useState(false);
   const [panelVisible, setPanelVisible] = useState(true);
   const [panelMinimized, setPanelMinimized] = useState(false);
+  const [mitigationReductionPct, setMitigationReductionPct] = useState(0);
+  const [stormIntensity, setStormIntensity] = useState(180);
+  const [isBenchmarkOpen, setIsBenchmarkOpen] = useState(false);
+  const [isEmergencyHotlineOpen, setIsEmergencyHotlineOpen] = useState(false);
   
   // Check backend and Earth Engine status
   useEffect(() => {
@@ -140,7 +144,6 @@ function App() {
         const data = await response.json();
         setBackendStatus('connected');
         setEarthEngineStatus(data.services.earth_engine ? 'connected' : 'needs_auth');
-        console.log('🔌 Backend connected:', data);
         
         // Auto-run baseline simulation if not already loaded
         if (!simulationData && currentPlan) {
@@ -151,7 +154,6 @@ function App() {
       }
     } catch (error) {
       setBackendStatus('offline');
-      console.error('❌ Backend connection failed. Please start the backend server.');
     }
   };
 
@@ -180,8 +182,6 @@ function App() {
     setSimulationStep('processing');
     
     try {
-      console.log('🚀 Starting real NASA data simulation...');
-      
       const response = await fetch('http://localhost:5000/api/simulate', {
         method: 'POST',
         headers: {
@@ -205,19 +205,16 @@ function App() {
       setSimulationData(simulationResult);
       setShowOverlay(true);
       
-      // Save simulation data
       localStorage.setItem('simulationData', JSON.stringify(simulationResult));
 
-      // Show success toast
       setToast({
         message: `Analysis Complete! 🎉\n\nProcessed real NASA data for ${uploadedFileName.replace('.geojson', '')}\nGenerated ${simulationResult.interventions?.length || 3} AI recommendations`,
         type: 'success'
       });
       
     } catch (error) {
-      console.error('❌ Simulation failed:', error);
       setToast({
-        message: `Simulation Failed!\n\n${error.message}\n\nPlease ensure:\n1. Backend server is running on localhost:5000\n2. Earth Engine is authenticated\n3. LMStudio is running on localhost:1234`,
+        message: `Simulation Failed!\n\n${error.message}\n\nPlease ensure backend server is running on localhost:5000`,
         type: 'error'
       });
       setSimulationData({
@@ -234,18 +231,15 @@ function App() {
     }
   };
 
-  const handleScenarioChange = async (newScenario) => {
+  const handleScenarioChange = useCallback(async (newScenario) => {
     setScenario(newScenario);
     localStorage.setItem('scenario', newScenario);
     
-    // Re-run simulation with new scenario if we have plan data
-    if (currentPlan && simulationData) {
+    if (currentPlan) {
       setLoading(true);
       setSimulationStep('updating');
       
       try {
-        console.log(`🔄 Updating to ${newScenario} scenario...`);
-        
         const response = await fetch('http://localhost:5000/api/simulate', {
           method: 'POST',
           headers: {
@@ -262,25 +256,14 @@ function App() {
         }
 
         const simulationResult = await response.json();
-        console.log(`📊 New scenario data:`, {
-          scenario: simulationResult.scenario,
-          runoff_change: simulationResult.metrics?.peak_runoff_change_pct,
-          people_affected: simulationResult.metrics?.scenario_people,
-          interventions_count: simulationResult.interventions?.length
-        });
         setSimulationData(simulationResult);
-        
-        // Save updated simulation data
         localStorage.setItem('simulationData', JSON.stringify(simulationResult));
 
-        // Show scenario change toast
         setToast({
           message: `Scenario Updated! 📊\n\nNow showing: ${newScenario.toUpperCase()}\nMetrics recalculated with real NASA data`,
           type: 'success'
         });
-        
       } catch (error) {
-        console.error('❌ Scenario update failed:', error);
         setToast({
           message: `Scenario Update Failed!\n\n${error.message}`,
           type: 'error'
@@ -290,10 +273,9 @@ function App() {
         setSimulationStep('');
       }
     }
-  };
+  }, [currentPlan]);
 
-  const handleLoadPlan = () => {
-    // Create file input for real GeoJSON upload
+  const handleLoadPlan = useCallback(() => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.geojson,.json';
@@ -309,15 +291,11 @@ function App() {
             setShowOverlay(false);
             setUploadedFileName(file.name);
             
-            // Save to localStorage
             localStorage.setItem('currentPlan', JSON.stringify(geojson));
             localStorage.setItem('uploadedFileName', file.name);
             
-            console.log('📁 Loaded new plan:', geojson);
-            
-            // Show success toast
             setToast({
-              message: `Successfully loaded: ${file.name}\n\nMap will center on the new location. Click "Run NASA Analysis" to process this area.`,
+              message: `Successfully loaded: ${file.name}\n\nMap centered on new location. Click "Run NASA Analysis" to process.`,
               type: 'success'
             });
           } catch (error) {
@@ -331,21 +309,15 @@ function App() {
       }
     };
     input.click();
-  };
+  }, []);
 
-  const [mitigationReductionPct, setMitigationReductionPct] = useState(0);
-  const [stormIntensity, setStormIntensity] = useState(180);
-  const [isBenchmarkOpen, setIsBenchmarkOpen] = useState(false);
-  const [isEmergencyHotlineOpen, setIsEmergencyHotlineOpen] = useState(false);
-
-  const handleSelectCity = (cityFileName) => {
+  const handleSelectCity = useCallback((cityFileName) => {
     const geojson = CITY_GEOJSONS[cityFileName] || CITY_GEOJSONS['trichy_area.geojson'];
     setCurrentPlan(geojson);
     setSimulationData(null);
     setShowOverlay(false);
     setUploadedFileName(cityFileName);
     
-    // Save to localStorage
     localStorage.setItem('currentPlan', JSON.stringify(geojson));
     localStorage.setItem('uploadedFileName', cityFileName);
     
@@ -353,7 +325,7 @@ function App() {
       message: `Switched to: ${cityFileName.replace('.geojson', '').replace('_area', '').toUpperCase()}\n\nClick "Run NASA Analysis" to simulate climate risk for this city!`,
       type: 'success'
     });
-  };
+  }, []);
 
   // Synchronize storm intensity with scenario changes or initial analysis
   useEffect(() => {
@@ -362,26 +334,23 @@ function App() {
     }
   }, [simulationData, scenario]);
 
-  // Compute live SCS-CN hydrological metrics dynamically as slider moves
-  const getActiveSimulationData = () => {
+  // Compute live SCS-CN hydrological metrics dynamically as slider moves (Memoized)
+  const activeSimulationData = useMemo(() => {
     if (!simulationData || !simulationData.metrics) return simulationData;
     
     const P = stormIntensity;
     const baseP = simulationData.climate_data?.precipitation_mm || 180;
     
-    // SCS Curve Number (CN=78 for urban residential/commercial mix)
     const cn = 78;
     const S = (25400 / cn) - 254; // S = 71.74 mm
     const Ia = 0.2 * S;          // Ia = 14.35 mm
     
-    // Runoff depth Q (mm)
     const Q = P > Ia ? Math.pow(P - Ia, 2) / (P - Ia + S) : 0;
     const baseQ = baseP > Ia ? Math.pow(baseP - Ia, 2) / (baseP - Ia + S) : 1;
     
     const runoffChangePct = Math.max(-80, Math.round(((Q - baseQ) / baseQ) * 100));
     const totalPop = simulationData.metrics.total_population || 6000;
     
-    // Inundation risk fraction
     const riskFraction = Math.min(0.92, Math.max(0.04, 0.04 + (Q / P) * 0.75));
     const peopleAffected = Math.round(totalPop * riskFraction);
 
@@ -395,14 +364,12 @@ function App() {
         impervious_fraction: Math.min(0.95, parseFloat((0.55 + (runoffChangePct / 300)).toFixed(2)))
       }
     };
-  };
+  }, [simulationData, stormIntensity]);
 
-  const activeSimulationData = getActiveSimulationData();
-
-  const getCurrentOverlay = () => {
+  // Compute active GeoJSON overlay polygon (Memoized)
+  const currentOverlay = useMemo(() => {
     if (!showOverlay || !simulationData) return null;
     
-    // Dynamically scale the flood overlay polygon based on storm intensity slider and mitigation!
     if (currentPlan && currentPlan.features && currentPlan.features[0] && currentPlan.features[0].geometry) {
       const coords = currentPlan.features[0].geometry.coordinates[0];
       if (coords && coords.length > 0) {
@@ -417,7 +384,6 @@ function App() {
         const halfSpanLon = Math.max((maxLon - minLon) / 2, 0.003);
         const halfSpanLat = Math.max((maxLat - minLat) / 2, 0.003);
         
-        // Scale flood zone relative to storm intensity (50mm -> 0.20, 180mm -> 0.50, 350mm -> 0.90)
         let scale = Math.min(0.95, Math.max(0.18, 0.18 + ((stormIntensity - 50) / 300) * 0.72));
         
         if (mitigationReductionPct > 0) {
@@ -464,24 +430,32 @@ function App() {
     }
     
     return null;
-  };
+  }, [showOverlay, simulationData, currentPlan, stormIntensity, mitigationReductionPct, scenario]);
 
-  const handleIntroComplete = () => {
+  const handleIntroComplete = useCallback(() => {
     setShowIntroPopup(false);
     localStorage.setItem('intro-completed', 'true');
     setPanelVisible(true);
     setPanelMinimized(false);
-  };
+  }, []);
 
-  const handlePanelToggle = () => {
-    setPanelVisible(!panelVisible);
+  const handlePanelToggle = useCallback(() => {
+    setPanelVisible(prev => !prev);
     setPanelMinimized(false);
-  };
+  }, []);
 
-  const handlePanelMinimize = () => {
+  const handlePanelMinimize = useCallback(() => {
     setPanelVisible(false);
     setPanelMinimized(true);
-  };
+  }, []);
+
+  const handleMitigationChange = useCallback((data) => {
+    setMitigationReductionPct(data.totalReductionPct);
+  }, []);
+
+  const handleStormIntensityChange = useCallback((val) => {
+    setStormIntensity(val);
+  }, []);
 
   return (
     <div className="app">
@@ -491,10 +465,9 @@ function App() {
         top: 20, 
         right: 20, 
         zIndex: 1000, 
-        background: 'rgba(255, 255, 255, 0.98)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.3)',
-        boxShadow: '0 8px 24px rgba(7, 23, 63, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.2) inset',
+        background: 'rgba(255, 255, 255, 0.96)',
+        border: '1px solid rgba(7, 23, 63, 0.1)',
+        boxShadow: '0 8px 24px rgba(7, 23, 63, 0.12)',
         padding: '16px 20px', 
         borderRadius: '16px', 
         fontSize: '13px',
@@ -630,7 +603,7 @@ function App() {
 
       <MapView 
         planData={currentPlan}
-        overlayData={getCurrentOverlay()}
+        overlayData={currentOverlay}
         scenario={scenario}
         showOverlay={showOverlay}
         simulationData={activeSimulationData}
@@ -657,10 +630,10 @@ function App() {
           isVisible={panelVisible}
           onToggle={handlePanelToggle}
           onMinimize={handlePanelMinimize}
-          onMitigationChange={(data) => setMitigationReductionPct(data.totalReductionPct)}
+          onMitigationChange={handleMitigationChange}
           planData={currentPlan}
           stormIntensity={stormIntensity}
-          onStormIntensityChange={(val) => setStormIntensity(val)}
+          onStormIntensityChange={handleStormIntensityChange}
           onOpenBenchmark={() => setIsBenchmarkOpen(true)}
           onOpenHotline={() => setIsEmergencyHotlineOpen(true)}
           mitigationReductionPct={mitigationReductionPct}
