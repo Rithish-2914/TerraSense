@@ -1,3 +1,4 @@
+import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import math
@@ -5,6 +6,13 @@ import requests
 import json
 import sys
 import hashlib
+import time
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
 
 if sys.platform == 'win32':
     try:
@@ -134,59 +142,148 @@ class LMStudioService:
         return {"source": "TerraSense Domain-Expert Rules Engine", "data": self._fallback_recommendation(metrics)}
 
     def _fallback_recommendation(self, metrics):
-        runoff_delta = metrics.get('peak_runoff_change_pct', 30.0)
-        area = metrics.get('area_ha', 100.0)
-        people = metrics.get('people_affected', 1200)
+        runoff_delta = float(metrics.get('peak_runoff_change_pct', 35.0))
+        area = float(metrics.get('area_ha', 100.0))
+        people = int(metrics.get('people_affected', 1480))
+        precip = float(metrics.get('mean_rain_mm', 180.0))
+
+        pkg1_cost = round(area * 0.95 + (precip / 180.0) * 12.5, 2)
+        pkg2_cost = round(area * 1.45 + 15.0, 2)
+        pkg3_cost = round(area * 2.80 + (precip / 180.0) * 45.0, 2)
+        pkg4_cost = round(area * 0.75 + 18.0, 2)
+        pkg5_cost = round(area * 0.45 + 10.0, 2)
 
         interventions = [
             {
-                "title": "Decentralized Bioswales & Rain Gardens",
+                "id": "CPWD-PKG-01",
+                "title": "Decentralized Bioswales & Urban Infiltration Network",
                 "type": "Nature-Based Solution (NBS)",
-                "target_runoff_reduction_pct": min(28, round(runoff_delta * 0.45, 1)),
+                "target_runoff_reduction_pct": min(26.0, round(14.0 + (runoff_delta * 0.25), 1)),
+                "runoff_reduction_pct": min(26.0, round(14.0 + (runoff_delta * 0.25), 1)),
                 "cooling_effect_c": 1.4,
-                "coverage_area_ha": round(area * 0.08, 2),
-                "estimated_cost_inr_lakhs": round(area * 4.5, 1),
+                "coverage_area_ha": round(area * 0.09, 2),
+                "estimated_cost_inr_lakhs": pkg1_cost,
+                "cost_estimate_inr_lakhs": pkg1_cost,
+                "cost_bracket": f"₹{pkg1_cost:.1f}L" if pkg1_cost < 100 else f"₹{pkg1_cost/100:.2f} Cr",
+                "storage_capacity_m3": int(area * 185),
+                "damage_prevented_lakhs": round(pkg1_cost * 4.8, 1),
+                "net_roi_pct": 380,
+                "implementation_months": 4,
                 "implementation_time_months": 4,
-                "priority": "High" if runoff_delta > 30 else "Medium",
-                "description": "Engineered vegetative swales along arterial transport corridors to capture initial flush volumes and recharge unconfined aquifers."
+                "priority": "High" if runoff_delta > 25 else "Medium",
+                "tender_code": "AMRUT-2.0/NBS/2026/01",
+                "contact": "Stormwater Drainage & Disaster Mitigation Wing",
+                "description": "Vegetative bio-retention swales with geotextile filtration to capture 1st-flush surface storm runoff and recharge unconfined aquifers.",
+                "cpwd_items": [
+                    {"code": "DSR 2.8.1", "item": "Earthwork in excavation for bioswale trenches", "qty": f"{int(area * 160)} m³", "rate": "₹340/m³", "amt": f"₹{round(pkg1_cost * 0.35, 1)}L"},
+                    {"code": "DSR 16.68", "item": "Graded crushed aggregate filter bed & geotextile liner", "qty": f"{int(area * 120)} m²", "rate": "₹480/m²", "amt": f"₹{round(pkg1_cost * 0.38, 1)}L"},
+                    {"code": "DSR 22.12", "item": "Native deep-root Vetiver & Typha bio-retention turfing", "qty": f"{int(area * 120)} m²", "rate": "₹280/m²", "amt": f"₹{round(pkg1_cost * 0.27, 1)}L"}
+                ]
             },
             {
-                "title": "Permeable Pavement Retrofit on Secondary Roads",
+                "id": "CPWD-PKG-02",
+                "title": "Permeable Interlocking Concrete Pavement (PICP) Retrofit",
                 "type": "Grey-Green Hybrid Infrastructure",
-                "target_runoff_reduction_pct": min(22, round(runoff_delta * 0.35, 1)),
-                "cooling_effect_c": 0.8,
-                "coverage_area_ha": round(area * 0.12, 2),
-                "estimated_cost_inr_lakhs": round(area * 8.2, 1),
+                "target_runoff_reduction_pct": min(22.0, round(10.0 + (runoff_delta * 0.20), 1)),
+                "runoff_reduction_pct": min(22.0, round(10.0 + (runoff_delta * 0.20), 1)),
+                "cooling_effect_c": 1.1,
+                "coverage_area_ha": round(area * 0.14, 2),
+                "estimated_cost_inr_lakhs": pkg2_cost,
+                "cost_estimate_inr_lakhs": pkg2_cost,
+                "cost_bracket": f"₹{pkg2_cost:.1f}L" if pkg2_cost < 100 else f"₹{pkg2_cost/100:.2f} Cr",
+                "storage_capacity_m3": int(area * 240),
+                "damage_prevented_lakhs": round(pkg2_cost * 4.2, 1),
+                "net_roi_pct": 320,
+                "implementation_months": 6,
                 "implementation_time_months": 6,
-                "priority": "High" if runoff_delta > 40 else "Medium",
-                "description": "Replace non-porous asphalt in parking clusters and pedestrian zones with porous interlocking concrete pavers (PICP)."
+                "priority": "High" if runoff_delta > 35 else "Medium",
+                "tender_code": "SMART-CITY/RDS/2026/04",
+                "contact": "Roads & Traffic Infrastructure Wing",
+                "description": "Retrofit arterial footpaths, parking plazas, and bus terminals with M-40 porous interlocking pavers over aggregate storage base.",
+                "cpwd_items": [
+                    {"code": "DSR 16.72", "item": "80mm M-40 grade high-permeability interlocking concrete blocks", "qty": f"{int(area * 180)} m²", "rate": "₹1,450/m²", "amt": f"₹{round(pkg2_cost * 0.55, 1)}L"},
+                    {"code": "DSR 4.1.8", "item": "Open-graded sub-base coarse aggregate reservoir layer", "qty": f"{int(area * 180)} m²", "rate": "₹720/m²", "amt": f"₹{round(pkg2_cost * 0.45, 1)}L"}
+                ]
             },
             {
-                "title": "Subsurface Stormwater Detention & RWH Vaults",
+                "id": "CPWD-PKG-03",
+                "title": "Subsurface Modular Geocellular Attenuation Vaults",
                 "type": "Civil Engineering Hydraulic Storage",
-                "target_runoff_reduction_pct": min(35, round(runoff_delta * 0.55, 1)),
-                "cooling_effect_c": 0.2,
-                "coverage_area_ha": round(area * 0.03, 2),
-                "estimated_cost_inr_lakhs": round(area * 14.0, 1),
+                "target_runoff_reduction_pct": min(38.0, round(18.0 + (runoff_delta * 0.35), 1)),
+                "runoff_reduction_pct": min(38.0, round(18.0 + (runoff_delta * 0.35), 1)),
+                "cooling_effect_c": 0.3,
+                "coverage_area_ha": round(area * 0.05, 2),
+                "estimated_cost_inr_lakhs": pkg3_cost,
+                "cost_estimate_inr_lakhs": pkg3_cost,
+                "cost_bracket": f"₹{pkg3_cost:.1f}L" if pkg3_cost < 100 else f"₹{pkg3_cost/100:.2f} Cr",
+                "storage_capacity_m3": int(area * 550),
+                "damage_prevented_lakhs": round(pkg3_cost * 6.2, 1),
+                "net_roi_pct": 520,
+                "implementation_months": 8,
                 "implementation_time_months": 8,
-                "priority": "High" if people > 2000 else "Medium",
-                "description": "Construct underground modular attenuation tanks beneath public parks to attenuate peak hydrograph discharge."
+                "priority": "Critical" if people > 2500 else "High",
+                "tender_code": "CPWD/HYDRO/2026/12",
+                "contact": "Hydraulic Engineering & Pumping Wing",
+                "description": "Construct high-load polypropylene geocellular holding tanks under municipal parks to buffer extreme cloudburst flash flows.",
+                "cpwd_items": [
+                    {"code": "DSR 19.34", "item": "Heavy-duty geocellular attenuation matrix assembly", "qty": f"{int(area * 90)} m³", "rate": "₹6,800/m³", "amt": f"₹{round(pkg3_cost * 0.65, 1)}L"},
+                    {"code": "DSR 19.82", "item": "Vortex silt separation & automated solar telemetry sluices", "qty": "2 Sets", "rate": "₹18,50,000/set", "amt": f"₹{round(pkg3_cost * 0.35, 1)}L"}
+                ]
             },
             {
-                "title": "Extensive Green Roof & Urban Cool Roof Policy",
-                "type": "Building Envelope Climate Adaptation",
-                "target_runoff_reduction_pct": 15.0,
-                "cooling_effect_c": 2.2,
-                "coverage_area_ha": round(area * 0.15, 2),
-                "estimated_cost_inr_lakhs": round(area * 6.0, 1),
+                "id": "CPWD-PKG-04",
+                "title": "Riverbank Bio-Engineering Riprap & Wetland Silt Traps",
+                "type": "Ecological Restoration & Flood Defense",
+                "target_runoff_reduction_pct": min(18.0, round(8.0 + (runoff_delta * 0.15), 1)),
+                "runoff_reduction_pct": min(18.0, round(8.0 + (runoff_delta * 0.15), 1)),
+                "cooling_effect_c": 1.8,
+                "coverage_area_ha": round(area * 0.08, 2),
+                "estimated_cost_inr_lakhs": pkg4_cost,
+                "cost_estimate_inr_lakhs": pkg4_cost,
+                "cost_bracket": f"₹{pkg4_cost:.1f}L" if pkg4_cost < 100 else f"₹{pkg4_cost/100:.2f} Cr",
+                "storage_capacity_m3": int(area * 210),
+                "damage_prevented_lakhs": round(pkg4_cost * 4.0, 1),
+                "net_roi_pct": 300,
+                "implementation_months": 5,
                 "implementation_time_months": 5,
                 "priority": "Medium",
-                "description": "High-albedo reflective coatings and sedum green roofs to mitigate microclimate heat stress and attenuate building roof runoff."
+                "tender_code": "IRRIGATION/ENV/2026/08",
+                "contact": "River Basin & Wetland Conservation Wing",
+                "description": "Gabion rock mattress revetments and constructed marsh wetlands to slow down flood crest velocity and prevent channel siltation.",
+                "cpwd_items": [
+                    {"code": "DSR 14.12", "item": "Zinc-coated wire mesh gabion rock riprap embankment", "qty": f"{int(area * 75)} m³", "rate": "₹3,900/m³", "amt": f"₹{round(pkg4_cost * 0.60, 1)}L"},
+                    {"code": "DSR 22.40", "item": "Wetland macrophyte planting and water level control weir", "qty": "1 System", "rate": "₹28,00,000", "amt": f"₹{round(pkg4_cost * 0.40, 1)}L"}
+                ]
+            },
+            {
+                "id": "CPWD-PKG-05",
+                "title": "Smart Rooftop RWH & High-Albedo Cool Roof Policy",
+                "type": "Building Envelope Climate Adaptation",
+                "target_runoff_reduction_pct": 12.0,
+                "runoff_reduction_pct": 12.0,
+                "cooling_effect_c": 2.4,
+                "coverage_area_ha": round(area * 0.18, 2),
+                "estimated_cost_inr_lakhs": pkg5_cost,
+                "cost_estimate_inr_lakhs": pkg5_cost,
+                "cost_bracket": f"₹{pkg5_cost:.1f}L" if pkg5_cost < 100 else f"₹{pkg5_cost/100:.2f} Cr",
+                "storage_capacity_m3": int(area * 120),
+                "damage_prevented_lakhs": round(pkg5_cost * 3.8, 1),
+                "net_roi_pct": 280,
+                "implementation_months": 3,
+                "implementation_time_months": 3,
+                "priority": "Medium",
+                "tender_code": "MUNICIPAL/BLDG/2026/15",
+                "contact": "Building Regulations & Energy Efficiency Cell",
+                "description": "High Solar Reflectance Index (SRI > 104) elastomer coatings and dual-stage rooftop rainwater harvesting filters on institutional complexes.",
+                "cpwd_items": [
+                    {"code": "DSR 12.45", "item": "High-albedo elastomeric heat reflective roof coating", "qty": f"{int(area * 250)} m²", "rate": "₹260/m²", "amt": f"₹{round(pkg5_cost * 0.50, 1)}L"},
+                    {"code": "DSR 18.10", "item": "Polyethylene dual-stage gravity stormwater filter units", "qty": f"{max(4, int(area * 0.15))} Units", "rate": "₹65,000/unit", "amt": f"₹{round(pkg5_cost * 0.50, 1)}L"}
+                ]
             }
         ]
         
         return {
-            "summary": f"Identified 4 multi-benefit interventions capable of reducing peak flood discharge by up to {min(65, round(runoff_delta * 0.85))}% and protecting {people:,} residents.",
+            "summary": f"Identified 5 multi-benefit civil packages scaling dynamically to {area} Ha catchment, abating up to {min(65, round(runoff_delta * 0.85))}% flood surge and protecting {people:,} residents.",
             "interventions": interventions
         }
 
@@ -477,6 +574,161 @@ def simulate():
             "status": "error",
             "message": str(e)
         }), 500
+
+@app.route('/api/emergency/twilio-status', methods=['GET'])
+def twilio_status():
+    account_sid = os.environ.get('TWILIO_ACCOUNT_SID', '').strip()
+    auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '').strip()
+    twilio_number = os.environ.get('TWILIO_PHONE_NUMBER', '').strip()
+    default_recipient = os.environ.get('ALERT_RECIPIENT_PHONE', '').strip()
+    
+    is_configured = bool(account_sid and auth_token and twilio_number)
+    
+    return jsonify({
+        "status": "success",
+        "configured": is_configured,
+        "mode": "live_carrier" if is_configured else "simulator_preview",
+        "twilio_phone_number": twilio_number if is_configured else "+1 (888) 107-7911",
+        "default_recipient": default_recipient or "+91 98402 11928",
+        "required_keys": [
+            "TWILIO_ACCOUNT_SID",
+            "TWILIO_AUTH_TOKEN",
+            "TWILIO_PHONE_NUMBER",
+            "ALERT_RECIPIENT_PHONE"
+        ]
+    })
+
+@app.route('/api/emergency/send-sms', methods=['POST'])
+def send_emergency_sms():
+    try:
+        data = request.get_json() or {}
+        to_phone = data.get('to_phone', '').strip() or os.environ.get('ALERT_RECIPIENT_PHONE', '+91 98402 11928')
+        incident_id = data.get('incident_id', 'TR-1077-8921')
+        caller_name = data.get('caller_name', 'Citizen')
+        ward = data.get('ward', 'Study Ward')
+        water_depth = data.get('water_depth', '1.25m')
+        relief_need = data.get('relief_need', 'Inflatable Rescue Boat')
+        assigned_unit = data.get('assigned_unit', 'NDRF Rescue Team 3')
+
+        sms_body = (
+            f"🚨 [DEOC 1077 DISPATCH ALERT] "
+            f"Ref: {incident_id} | Ward: {ward} | "
+            f"Depth: {water_depth} | Need: {relief_need} | "
+            f"Assigned Unit: {assigned_unit} | TerraSense Digital Twin Command"
+        )
+
+        account_sid = os.environ.get('TWILIO_ACCOUNT_SID', '').strip()
+        auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '').strip()
+        twilio_number = os.environ.get('TWILIO_PHONE_NUMBER', '').strip()
+
+        if account_sid and auth_token and twilio_number and to_phone:
+            url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json"
+            resp = requests.post(
+                url,
+                auth=(account_sid, auth_token),
+                data={
+                    "From": twilio_number,
+                    "To": to_phone,
+                    "Body": sms_body
+                },
+                timeout=10
+            )
+            if resp.status_code in [200, 201]:
+                res_data = resp.json()
+                return jsonify({
+                    "status": "success",
+                    "mode": "live_carrier_sent",
+                    "message_sid": res_data.get("sid"),
+                    "to": to_phone,
+                    "body": sms_body,
+                    "timestamp": time.strftime("%H:%M:%S")
+                })
+            else:
+                return jsonify({
+                    "status": "carrier_error",
+                    "mode": "live_carrier_failed",
+                    "details": resp.text,
+                    "body": sms_body
+                }), 400
+
+        mock_sid = f"SM{hashlib.md5(sms_body.encode()).hexdigest()}"
+        return jsonify({
+            "status": "success",
+            "mode": "simulator_preview",
+            "message_sid": mock_sid,
+            "to": to_phone,
+            "body": sms_body,
+            "timestamp": time.strftime("%H:%M:%S"),
+            "note": "Simulator delivered. Set TWILIO_ACCOUNT_SID in backend/.env for live cellular SMS transmission."
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/emergency/make-call', methods=['POST'])
+def make_emergency_call():
+    try:
+        data = request.get_json() or {}
+        to_phone = data.get('to_phone', '').strip() or os.environ.get('ALERT_RECIPIENT_PHONE', '+91 98402 11928')
+        ward = data.get('ward', 'the affected ward')
+        water_depth = data.get('water_depth', 'over 1 meter')
+        assigned_unit = data.get('assigned_unit', 'District Relief Team')
+
+        twiml_script = (
+            f"<Response><Say voice='alice'>"
+            f"This is an urgent automated alert from the District Emergency Operation Center 1077. "
+            f"Severe inundation of {water_depth} has been reported in {ward}. "
+            f"Field unit {assigned_unit} has been mobilized to your coordinates. "
+            f"Please relocate immediately to the nearest high-ground relief shelter. "
+            f"Helpline 1 0 7 7 is active."
+            f"</Say></Response>"
+        )
+
+        account_sid = os.environ.get('TWILIO_ACCOUNT_SID', '').strip()
+        auth_token = os.environ.get('TWILIO_AUTH_TOKEN', '').strip()
+        twilio_number = os.environ.get('TWILIO_PHONE_NUMBER', '').strip()
+
+        if account_sid and auth_token and twilio_number and to_phone:
+            url = f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Calls.json"
+            resp = requests.post(
+                url,
+                auth=(account_sid, auth_token),
+                data={
+                    "From": twilio_number,
+                    "To": to_phone,
+                    "Twiml": twiml_script
+                },
+                timeout=10
+            )
+            if resp.status_code in [200, 201]:
+                res_data = resp.json()
+                return jsonify({
+                    "status": "success",
+                    "mode": "live_voice_call_initiated",
+                    "call_sid": res_data.get("sid"),
+                    "to": to_phone,
+                    "timestamp": time.strftime("%H:%M:%S")
+                })
+            else:
+                return jsonify({
+                    "status": "voice_carrier_error",
+                    "mode": "live_voice_call_failed",
+                    "details": resp.text
+                }), 400
+
+        mock_call_sid = f"CA{hashlib.md5(twiml_script.encode()).hexdigest()}"
+        return jsonify({
+            "status": "success",
+            "mode": "simulator_preview",
+            "call_sid": mock_call_sid,
+            "to": to_phone,
+            "twiml_spoken_text": twiml_script,
+            "timestamp": time.strftime("%H:%M:%S"),
+            "note": "Simulator voice call delivered. Set TWILIO credentials in backend/.env for live cellular voice calling."
+        })
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')

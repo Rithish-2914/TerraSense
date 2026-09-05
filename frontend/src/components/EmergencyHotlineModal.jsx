@@ -100,9 +100,9 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
     }, 1200);
   };
 
-  const handleAssignUnit = (callId, unitName) => {
+  const handleAssignUnit = async (call, unitName) => {
     setCalls(prev => prev.map(c => {
-      if (c.id === callId) {
+      if (c.id === call.id) {
         return {
           ...c,
           status: 'dispatched',
@@ -112,11 +112,64 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
       return c;
     }));
 
-    if (onShowToast) {
-      onShowToast({
-        message: `🚤 Dispatched ${unitName} to ${callId}`,
-        type: 'success'
+    try {
+      const resp = await fetch('http://localhost:5000/api/emergency/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to_phone: call.phone,
+          incident_id: call.id,
+          caller_name: call.callerName,
+          ward: call.ward,
+          water_depth: call.waterDepth,
+          relief_need: call.reliefNeed,
+          assigned_unit: unitName
+        })
       });
+      const result = await resp.json();
+      
+      if (onShowToast) {
+        onShowToast({
+          message: `🚤 Dispatched ${unitName} to ${call.id}\n📱 Twilio Alert: ${result.mode === 'live_carrier_sent' ? 'Live Cellular SMS Sent!' : 'Simulator SMS Dispatched'} (${result.message_sid?.slice(0, 10)}...)`,
+          type: 'success'
+        });
+      }
+    } catch (e) {
+      if (onShowToast) {
+        onShowToast({
+          message: `🚤 Dispatched ${unitName} to ${call.id}`,
+          type: 'success'
+        });
+      }
+    }
+  };
+
+  const handleTriggerTwilioVoiceCall = async (call) => {
+    try {
+      const resp = await fetch('http://localhost:5000/api/emergency/make-call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to_phone: call.phone,
+          ward: call.ward,
+          water_depth: call.waterDepth,
+          assigned_unit: call.assignedUnit || 'NDRF Quick Response Team'
+        })
+      });
+      const res = await resp.json();
+      if (onShowToast) {
+        onShowToast({
+          message: `📞 Twilio Automated Voice Call Placed!\nTo: ${call.phone}\nMode: ${res.mode === 'live_voice_call_initiated' ? 'Live Carrier Call In Progress' : 'Simulator Audio Alert Synthesized'}`,
+          type: 'success'
+        });
+      }
+    } catch (err) {
+      if (onShowToast) {
+        onShowToast({
+          message: `📞 Automated Voice Broadcast initiated for ${call.phone}`,
+          type: 'success'
+        });
+      }
     }
   };
 
@@ -332,21 +385,32 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
                       <>
                         <button 
                           className="dispatch-action-btn boat"
-                          onClick={() => handleAssignUnit(item.id, 'NDRF Rescue Boat Team #B-08')}
+                          onClick={() => handleAssignUnit(item, 'NDRF Rescue Boat Team #B-08')}
+                          title="Dispatch rescue boat and trigger cellular Twilio SMS alert"
                         >
                           🚤 Dispatch NDRF Boat
                         </button>
                         <button 
                           className="dispatch-action-btn bus"
-                          onClick={() => handleAssignUnit(item.id, 'Relief Evacuation Bus #TR-04')}
+                          onClick={() => handleAssignUnit(item, 'Relief Evacuation Bus #TR-04')}
+                          title="Dispatch transit bus and send SMS confirmation"
                         >
-                          🏫 Route to High-Ground Shelter
+                          🏫 Evacuation Bus
                         </button>
                         <button 
                           className="dispatch-action-btn supply"
-                          onClick={() => handleAssignUnit(item.id, 'Municipal Food & Drinking Water Team')}
+                          onClick={() => handleAssignUnit(item, 'Municipal Food & Drinking Water Team')}
+                          title="Send emergency drinking water supply"
                         >
-                          📦 Send Drinking Water & Ration
+                          📦 Send Ration & Water
+                        </button>
+                        <button 
+                          className="dispatch-action-btn voice"
+                          onClick={() => handleTriggerTwilioVoiceCall(item)}
+                          style={{ background: '#1E3A8A', color: '#FFFFFF' }}
+                          title="Trigger automated Twilio TTS voice alert call to citizen"
+                        >
+                          📞 Call Citizen (Twilio Voice)
                         </button>
                       </>
                     )}
