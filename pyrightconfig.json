@@ -1,0 +1,9 @@
+{
+  "extraPaths": [
+    "C:/Users/RITHISH/AppData/Local/Packages/PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0/LocalCache/local-packages/Python313/site-packages",
+    "C:/Users/RITHISH/AppData/Local/Programs/Python/Python312/Lib/site-packages",
+    "backend"
+  ],
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none"
+}

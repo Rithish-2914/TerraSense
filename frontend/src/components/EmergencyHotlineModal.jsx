@@ -1,0 +1,378 @@
+import React, { useState } from 'react';
+import './EmergencyHotlineModal.css';
+
+const INITIAL_CALL_RECORDS = [
+  {
+    id: 'TR-1077-8921',
+    callerName: 'Murugan K.',
+    phone: '+91 98402 11928',
+    ward: 'Palakkarai Main Bazaar (Ward 14)',
+    timestamp: '16:48 PM (2 mins ago)',
+    severity: 'critical', // 'critical', 'high', 'medium', 'resolved'
+    waterDepth: '1.25m (Waist-deep water)',
+    reliefNeed: 'Inflatable Rescue Boat + Paramedic for 78yo bedridden mother',
+    transcript: 'Water has entered ground floor living room up to 4 feet near temple street. Electricity is disconnected. Elderly mother cannot walk. Please send rescue team immediately.',
+    status: 'pending',
+    assignedUnit: null,
+    audioDuration: '0:28'
+  },
+  {
+    id: 'TR-1077-8919',
+    callerName: 'Ananya Ramachandran',
+    phone: '+91 94431 88201',
+    ward: 'Cauvery Nagar 2nd Cross (Ward 9)',
+    timestamp: '16:42 PM (8 mins ago)',
+    severity: 'high',
+    waterDepth: '0.85m (Knee-deep flood)',
+    reliefNeed: 'Drinking water canisters & infant milk supply (2 infants)',
+    transcript: 'Drinking water pipeline contaminated with silt. 4 adults and 2 infants stranded on 1st floor terrace. Requesting drinking water and milk powder packets.',
+    status: 'dispatched',
+    assignedUnit: 'NDRF Rescue Team 3 (Boat #B-04)',
+    audioDuration: '0:34'
+  },
+  {
+    id: 'TR-1077-8914',
+    callerName: 'K. Sundaram (Ward Secretary)',
+    phone: '+91 97890 44312',
+    ward: 'Cantonment Bus Stand Sub-station',
+    timestamp: '16:31 PM (19 mins ago)',
+    severity: 'medium',
+    waterDepth: '0.45m (Surface runoff)',
+    reliefNeed: '2x High-capacity Submersible Dewatering Pumps (50 HP)',
+    transcript: 'Sub-station perimeter wall waterlogged. If dewatering pumps not deployed within 30 minutes, 4 feeder lines will trip. Urgent civil assistance requested.',
+    status: 'dispatched',
+    assignedUnit: 'Corporation Dewatering Unit #2',
+    audioDuration: '0:45'
+  },
+  {
+    id: 'TR-1077-8902',
+    callerName: 'Selvi Meenakshi',
+    phone: '+91 99520 66734',
+    ward: 'Thillai Nagar West (Ward 7)',
+    timestamp: '16:08 PM (42 mins ago)',
+    severity: 'resolved',
+    waterDepth: '0.20m (Receding)',
+    reliefNeed: 'Evacuation transit to High-Ground Relief Hub',
+    transcript: 'Relief transit bus arrived. 14 residents safely relocated to Higher Secondary School Relief Shelter (+94m MSL). Drinking water and food packets distributed.',
+    status: 'resolved',
+    assignedUnit: 'District Relief Bus #TR-12',
+    audioDuration: '0:22'
+  }
+];
+
+const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
+  const [calls, setCalls] = useState(INITIAL_CALL_RECORDS);
+  const [filterSeverity, setFilterSeverity] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoggingCall, setIsLoggingCall] = useState(false);
+  const [playingCallId, setPlayingCallId] = useState(null);
+
+  if (!isOpen) return null;
+
+  const handleSimulateCall = () => {
+    setIsLoggingCall(true);
+    
+    setTimeout(() => {
+      const newCall = {
+        id: `TR-1077-${Math.floor(1000 + Math.random() * 9000)}`,
+        callerName: 'Rajesh Kumar (Citizen)',
+        phone: '+91 98410 77412',
+        ward: 'Rockfort Bazaar / Teppakulam (Ward 11)',
+        timestamp: 'Just now (16:53 PM)',
+        severity: 'critical',
+        waterDepth: '1.10m (Rising water)',
+        reliefNeed: 'Emergency Rescue Boat (4 senior citizens trapped on terrace)',
+        transcript: 'Water level crossed ground floor window sills 5 minutes ago. 4 senior citizens moved to terrace. Requesting NDRF inflatable boat for immediate evacuation.',
+        status: 'pending',
+        assignedUnit: null,
+        audioDuration: '0:24'
+      };
+
+      setCalls(prev => [newCall, ...prev]);
+      setIsLoggingCall(false);
+
+      if (onShowToast) {
+        onShowToast({
+          message: `🚨 New Emergency Call Logged: ${newCall.id}\nCaller: ${newCall.callerName} (${newCall.ward})\nNeed: ${newCall.reliefNeed}`,
+          type: 'error'
+        });
+      }
+    }, 1200);
+  };
+
+  const handleAssignUnit = (callId, unitName) => {
+    setCalls(prev => prev.map(c => {
+      if (c.id === callId) {
+        return {
+          ...c,
+          status: 'dispatched',
+          assignedUnit: unitName
+        };
+      }
+      return c;
+    }));
+
+    if (onShowToast) {
+      onShowToast({
+        message: `🚤 Dispatched ${unitName} to ${callId}`,
+        type: 'success'
+      });
+    }
+  };
+
+  const handleResolveCall = (callId) => {
+    setCalls(prev => prev.map(c => {
+      if (c.id === callId) {
+        return {
+          ...c,
+          status: 'resolved',
+          severity: 'resolved',
+          assignedUnit: c.assignedUnit || 'District Evacuation Unit'
+        };
+      }
+      return c;
+    }));
+
+    if (onShowToast) {
+      onShowToast({
+        message: `✅ Call #${callId} marked as Safely Evacuated & Resolved`,
+        type: 'success'
+      });
+    }
+  };
+
+  const handleToggleAudio = (callId) => {
+    if (playingCallId === callId) {
+      setPlayingCallId(null);
+    } else {
+      setPlayingCallId(callId);
+      setTimeout(() => setPlayingCallId(null), 3500);
+    }
+  };
+
+  const filteredCalls = calls.filter(c => {
+    if (filterSeverity !== 'all' && c.severity !== filterSeverity) return false;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return (
+        c.callerName.toLowerCase().includes(q) ||
+        c.ward.toLowerCase().includes(q) ||
+        c.phone.includes(q) ||
+        c.reliefNeed.toLowerCase().includes(q) ||
+        c.id.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const criticalCount = calls.filter(c => c.severity === 'critical' && c.status !== 'resolved').length;
+  const highCount = calls.filter(c => c.severity === 'high' && c.status !== 'resolved').length;
+  const resolvedCount = calls.filter(c => c.status === 'resolved').length;
+
+  return (
+    <div className="hotline-backdrop" onClick={onClose}>
+      <div className="hotline-modal" onClick={e => e.stopPropagation()}>
+        
+        {/* Government Header */}
+        <div className="hotline-header">
+          <div className="hotline-header-left">
+            <div className="emblem-badge">
+              <span>🏛️</span>
+            </div>
+            <div>
+              <h2>Municipal Disaster Control Room & Citizen Helpline</h2>
+              <p className="hotline-sub">
+                District Emergency Operation Center (DEOC) • Helpline: <strong>1077 / 1070 / 0431-2401000</strong>
+              </p>
+            </div>
+          </div>
+          <div className="hotline-header-right">
+            <button 
+              className="simulate-incoming-btn"
+              onClick={handleSimulateCall}
+              disabled={isLoggingCall}
+            >
+              {isLoggingCall ? '⏳ Logging Call...' : '📞 Log Incoming Distress Call'}
+            </button>
+            <button className="hotline-close-btn" onClick={onClose} title="Close">✕</button>
+          </div>
+        </div>
+
+        {/* Status Counters */}
+        <div className="hotline-counters">
+          <div className="counter-card red">
+            <span className="counter-title">CRITICAL RESCUES PENDING</span>
+            <span className="counter-num">{criticalCount}</span>
+            <span className="counter-desc">Water level &gt; 1.0 meter</span>
+          </div>
+          <div className="counter-card orange">
+            <span className="counter-title">HIGH PRIORITY RELIEF</span>
+            <span className="counter-num">{highCount}</span>
+            <span className="counter-desc">Medical / Food / Infants</span>
+          </div>
+          <div className="counter-card green">
+            <span className="counter-title">SAFELY EVACUATED</span>
+            <span className="counter-num">{resolvedCount}</span>
+            <span className="counter-desc">Relocated to High-Ground Shelters</span>
+          </div>
+          <div className="counter-card blue">
+            <span className="counter-title">TOTAL CALLS LOGGED</span>
+            <span className="counter-num">{calls.length}</span>
+            <span className="counter-desc">Active Ward Operations</span>
+          </div>
+        </div>
+
+        {/* Filter and Search Bar */}
+        <div className="hotline-toolbar">
+          <div className="tab-filters">
+            <button 
+              className={`tab-btn ${filterSeverity === 'all' ? 'active' : ''}`}
+              onClick={() => setFilterSeverity('all')}
+            >
+              All Calls ({calls.length})
+            </button>
+            <button 
+              className={`tab-btn red ${filterSeverity === 'critical' ? 'active' : ''}`}
+              onClick={() => setFilterSeverity('critical')}
+            >
+              🔴 Critical ({criticalCount})
+            </button>
+            <button 
+              className={`tab-btn orange ${filterSeverity === 'high' ? 'active' : ''}`}
+              onClick={() => setFilterSeverity('high')}
+            >
+              🟠 High Priority ({highCount})
+            </button>
+            <button 
+              className={`tab-btn green ${filterSeverity === 'resolved' ? 'active' : ''}`}
+              onClick={() => setFilterSeverity('resolved')}
+            >
+              🟢 Evacuated ({resolvedCount})
+            </button>
+          </div>
+
+          <div className="search-wrap">
+            <input 
+              type="text" 
+              placeholder="Search by caller, ward, phone, or request..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Dispatch Log Table / Cards */}
+        <div className="hotline-records-scroll">
+          {filteredCalls.length === 0 ? (
+            <div className="no-records">
+              <span>No emergency records matching current filter.</span>
+            </div>
+          ) : (
+            filteredCalls.map(item => (
+              <div key={item.id} className={`hotline-card severity-${item.severity}`}>
+                <div className="hotline-card-header">
+                  <div className="caller-col">
+                    <span className="call-ref">{item.id}</span>
+                    <strong className="caller-title">{item.callerName}</strong>
+                    <span className="phone-tag">📞 {item.phone}</span>
+                    <span className="time-tag">🕒 {item.timestamp}</span>
+                  </div>
+
+                  <div className="status-badges">
+                    <span className={`pill-badge ${item.severity}`}>
+                      {item.severity === 'critical' ? '🔴 Critical' : item.severity === 'high' ? '🟠 High' : item.severity === 'resolved' ? '🟢 Evacuated' : '🟡 Medium'}
+                    </span>
+                    <span className={`dispatch-pill ${item.status}`}>
+                      {item.status === 'resolved' ? '✅ Evacuated & Resolved' : item.status === 'dispatched' ? '🚤 Unit Dispatched' : '⚠️ Pending Dispatch'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="hotline-card-grid">
+                  <div className="grid-left">
+                    <div className="row-item">
+                      <span className="row-label">Ward / Locality:</span>
+                      <strong className="row-val">{item.ward}</strong>
+                    </div>
+                    <div className="row-item">
+                      <span className="row-label">Water Level:</span>
+                      <span className="row-val depth">{item.waterDepth}</span>
+                    </div>
+                    <div className="row-item">
+                      <span className="row-label">Required Assistance:</span>
+                      <span className="row-val need">{item.reliefNeed}</span>
+                    </div>
+                  </div>
+
+                  <div className="grid-right">
+                    <div className="recording-box">
+                      <div className="recording-top">
+                        <span className="rec-title">📞 Voice Call Audio Log ({item.audioDuration})</span>
+                        <button 
+                          className={`play-rec-btn ${playingCallId === item.id ? 'playing' : ''}`}
+                          onClick={() => handleToggleAudio(item.id)}
+                        >
+                          {playingCallId === item.id ? '⏹️ Playing Audio...' : '▶️ Play Recording'}
+                        </button>
+                      </div>
+                      <p className="rec-text">"{item.transcript}"</p>
+                    </div>
+                  </div>
+                </div>
+
+                {item.assignedUnit && (
+                  <div className="dispatched-unit-tag">
+                    <span>🛡️ Assigned Field Unit: <strong>{item.assignedUnit}</strong></span>
+                  </div>
+                )}
+
+                <div className="hotline-card-footer">
+                  <div className="action-buttons-group">
+                    {item.status !== 'resolved' && (
+                      <>
+                        <button 
+                          className="dispatch-action-btn boat"
+                          onClick={() => handleAssignUnit(item.id, 'NDRF Rescue Boat Team #B-08')}
+                        >
+                          🚤 Dispatch NDRF Boat
+                        </button>
+                        <button 
+                          className="dispatch-action-btn bus"
+                          onClick={() => handleAssignUnit(item.id, 'Relief Evacuation Bus #TR-04')}
+                        >
+                          🏫 Route to High-Ground Shelter
+                        </button>
+                        <button 
+                          className="dispatch-action-btn supply"
+                          onClick={() => handleAssignUnit(item.id, 'Municipal Food & Drinking Water Team')}
+                        >
+                          📦 Send Drinking Water & Ration
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="resolve-group">
+                    {item.status !== 'resolved' ? (
+                      <button 
+                        className="resolve-action-btn"
+                        onClick={() => handleResolveCall(item.id)}
+                      >
+                        ✅ Mark Safely Evacuated
+                      </button>
+                    ) : (
+                      <span className="evacuated-label">✓ Resident safely evacuated to relief shelter</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default EmergencyHotlineModal;

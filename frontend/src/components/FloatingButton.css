@@ -1,0 +1,139 @@
+/* NASA Space Apps Brand Variables */
+:root {
+  --deep-blue: #07173F;
+  --electric-blue: #0042A6;
+  --neon-yellow: #EAFE07;
+  --rocket-red: #E43700;
+  --blue-yonder: #2E96F5;
+  --white: #FFFFFF;
+}
+
+.floating-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  box-shadow: 
+    0 8px 24px rgba(7, 23, 63, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  cursor: pointer;
+  z-index: 999;
+  transition: all 0.3s ease;
+  animation: floatingButtonSlideIn 0.4s ease-out;
+  min-width: 220px;
+  max-width: 260px;
+}
+
+.floating-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 20px 40px rgba(7, 23, 63, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.3) inset;
+}
+
+.floating-button-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 24px;
+  min-height: 60px;
+  overflow: hidden;
+}
+
+.floating-button-logo {
+  height: 36px;
+  width: auto;
+  flex-shrink: 0;
+  max-width: 100px;
+  object-fit: contain;
+}
+
+.floating-button-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.floating-button-title {
+  font-family: 'Fira Sans', sans-serif;
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--deep-blue);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.floating-button-status {
+  font-family: 'Overpass', sans-serif;
+  font-size: 12px;
+  color: var(--electric-blue);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-top: 2px;
+}
+
+.floating-button-indicator {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  background: var(--neon-yellow);
+  border: 2px solid var(--white);
+  border-radius: 50%;
+  animation: pulseIndicator 2s infinite;
+}
+
+/* Animations */
+@keyframes floatingButtonSlideIn {
+  from { 
+    opacity: 0;
+    transform: translateX(100px) scale(0.8);
+  }
+  to { 
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes pulseIndicator {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .floating-button {
+    bottom: 16px;
+    right: 16px;
+    min-width: 140px;
+  }
+  
+  .floating-button-content {
+    padding: 12px 16px;
+    gap: 10px;
+  }
+  
+  .floating-button-logo {
+    height: 24px;
+  }
+  
+  .floating-button-title {
+    font-size: 14px;
+  }
+  
+  .floating-button-status {
+    font-size: 9px;
+  }
+}
