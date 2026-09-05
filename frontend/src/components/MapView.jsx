@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 
@@ -24,44 +24,44 @@ const mapStyles = {
     dashArray: '6, 6'
   },
   floodRiskBaseline: {
-    color: '#FF6B35',
+    color: '#EF4444',
     weight: 2,
-    fillOpacity: 0.40,
-    fillColor: '#FF6B35'
+    fillOpacity: 0.50,
+    fillColor: '#EF4444'
   },
   floodRiskRCP45: {
-    color: '#E43700',
+    color: '#DC2626',
     weight: 2.5,
-    fillOpacity: 0.55,
-    fillColor: '#E43700'
+    fillOpacity: 0.58,
+    fillColor: '#DC2626'
   },
   floodRiskRCP85: {
-    color: '#900C3F',
+    color: '#991B1B',
     weight: 3,
-    fillOpacity: 0.65,
-    fillColor: '#C70039'
+    fillOpacity: 0.68,
+    fillColor: '#B91C1C'
   },
   floodRiskMitigated: {
-    color: '#27AE60',
+    color: '#059669',
     weight: 2.5,
-    fillOpacity: 0.40,
-    fillColor: '#2ECC71'
+    fillOpacity: 0.38,
+    fillColor: '#10B981'
   },
   splitLeftBefore: {
-    color: '#900C3F',
+    color: '#DC2626',
     weight: 3,
     fillOpacity: 0.70,
-    fillColor: '#E43700'
+    fillColor: '#EF4444'
   },
   splitRightAfter: {
-    color: '#065F46',
+    color: '#059669',
     weight: 2.5,
     fillOpacity: 0.45,
     fillColor: '#10B981'
   }
 };
 
-// High-performance direct Leaflet GeoJSON layer (avoids React DOM thrashing)
+// High-performance direct Leaflet GeoJSON layer
 function FastGeoJSON({ data, style, onEachFeature }) {
   const map = useMap();
   const layerRef = useRef(null);
@@ -69,23 +69,29 @@ function FastGeoJSON({ data, style, onEachFeature }) {
   useEffect(() => {
     if (!map || !data) return;
 
-    // Remove previous layer
     if (layerRef.current) {
-      map.removeLayer(layerRef.current);
+      try {
+        map.removeLayer(layerRef.current);
+      } catch (e) {}
       layerRef.current = null;
     }
 
-    const geoLayer = L.geoJSON(data, {
-      style: typeof style === 'function' ? style : () => style,
-      onEachFeature: onEachFeature
-    });
-
-    geoLayer.addTo(map);
-    layerRef.current = geoLayer;
+    try {
+      const geoLayer = L.geoJSON(data, {
+        style: typeof style === 'function' ? style : () => style,
+        onEachFeature: onEachFeature
+      });
+      geoLayer.addTo(map);
+      layerRef.current = geoLayer;
+    } catch (err) {
+      console.error('GeoJSON rendering error:', err);
+    }
 
     return () => {
       if (layerRef.current && map) {
-        map.removeLayer(layerRef.current);
+        try {
+          map.removeLayer(layerRef.current);
+        } catch (e) {}
         layerRef.current = null;
       }
     };
@@ -577,15 +583,14 @@ const MapView = ({
 
   // Generate 3 High-Ground Safe Evacuation Shelters for this specific city
   const safeShelters = useMemo(() => {
-    const cityName = uploadedFileName ? uploadedFileName.replace('.geojson', '').replace('_area', '').toUpperCase() : 'CIVIC';
-    return activeCityData.shelters.map((s, idx) => ({
+    return activeCityData.shelters.map((s) => ({
       ...s,
       position: [
         currentCenter[0] + halfSpanLat * s.offset[0], 
         currentCenter[1] + halfSpanLon * s.offset[1]
       ]
     }));
-  }, [activeCityData, currentCenter, halfSpanLat, halfSpanLon, uploadedFileName]);
+  }, [activeCityData, currentCenter, halfSpanLat, halfSpanLon]);
 
   // Evacuation Corridor Polylines for this specific city
   const evacuationPaths = useMemo(() => {
@@ -642,8 +647,11 @@ const MapView = ({
         type: "Feature",
         properties: {
           name: "BEFORE: Extreme Unmitigated Cloudburst Flood",
-          risk_level: "Severe Flash Flood Hazard (Pre-Intervention)",
-          depth_m: "1.15m"
+          risk_tier: "Critical Hazard (>1.2m)",
+          depth_m: "1.15",
+          fill_color: "#EF4444",
+          stroke_color: "#DC2626",
+          fill_opacity: 0.65
         },
         geometry: {
           type: "Polygon",
@@ -664,8 +672,11 @@ const MapView = ({
         type: "Feature",
         properties: {
           name: "AFTER: Green Infrastructure Sandbox Protection",
-          risk_level: "Mitigated Eco Buffer (-52% Runoff, ₹8.9 Cr Saved)",
-          depth_m: "0.22m"
+          risk_tier: "Mitigated Eco Buffer (-52% Runoff, ₹8.9 Cr Saved)",
+          depth_m: "0.22",
+          fill_color: "#10B981",
+          stroke_color: "#059669",
+          fill_opacity: 0.45
         },
         geometry: {
           type: "Polygon",
@@ -709,7 +720,7 @@ const MapView = ({
     }
   }, [mitigationReductionPct, scenario]);
 
-  const onEachOverlayFeature = (feature, layer) => {
+  const onEachOverlayFeature = useCallback((feature, layer) => {
     if (feature && feature.properties) {
       const name = feature.properties.name || 'Climate Risk Zone';
       const tier = feature.properties.risk_tier || feature.properties.risk_level || 'Flood Risk';
@@ -731,9 +742,9 @@ const MapView = ({
         </div>
       `);
     }
-  };
+  }, [mitigationReductionPct]);
 
-  const onEachPlanFeature = (feature, layer) => {
+  const onEachPlanFeature = useCallback((feature, layer) => {
     const areaName = uploadedFileName ? uploadedFileName.replace('.geojson', '').replace('_area', '') : 'Analysis Ward';
     layer.bindPopup(`
       <div style="font-family: 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.5;">
@@ -741,7 +752,7 @@ const MapView = ({
         <span style="color: #555;">Layer Spectrum: <strong>${activeLayer.toUpperCase()}</strong></span>
       </div>
     `);
-  };
+  }, [uploadedFileName, activeLayer]);
 
   return (
     <div className="map-container" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
@@ -888,7 +899,6 @@ const MapView = ({
       {/* Swipe Curtain Draggable Control Widget & Vertical Divider Line */}
       {splitViewActive && (
         <>
-          {/* Glowing Vertical Divider Line */}
           <div style={{
             position: 'absolute',
             top: 0,
@@ -922,7 +932,6 @@ const MapView = ({
             </div>
           </div>
 
-          {/* Floating Slider Control Widget */}
           <div style={{
             position: 'absolute',
             bottom: '25px',
@@ -965,7 +974,7 @@ const MapView = ({
         </>
       )}
 
-      {/* Map Container (Prefer Canvas for 60fps hardware acceleration) */}
+      {/* Map Container */}
       <MapContainer 
         center={currentCenter} 
         zoom={MAP_CONFIG.zoom} 
