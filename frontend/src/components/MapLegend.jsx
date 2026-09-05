@@ -6,23 +6,23 @@ const MapLegend = ({ uploadedFileName, simulationData }) => {
     if (uploadedFileName) {
       return uploadedFileName.replace('.geojson', '').replace('_area', '').replace('_', ' ').toUpperCase();
     }
-    return 'ANALYSIS WARD';
+    return 'ANALYSIS CATCHMENT';
   };
 
   return (
     <div className="map-legend">
       <div className="legend-title">
-        <span>📍 {getAreaName()}</span>
+        <span>{getAreaName()}</span>
       </div>
       
       <div className="legend-item">
         <div className="color-square blue"></div>
-        <span>Study Ward Boundary</span>
+        <span>Catchment Boundary</span>
       </div>
 
       {simulationData && (
         <>
-          <div className="legend-section-title">USDA SCS Inundation Tiers</div>
+          <div className="legend-section-title">Inundation Classification</div>
           
           <div className="legend-item">
             <div className="color-square red"></div>
@@ -41,7 +41,7 @@ const MapLegend = ({ uploadedFileName, simulationData }) => {
 
           <div className="legend-item">
             <div className="color-square green"></div>
-            <span>Green Sponge / Safe Shelter</span>
+            <span>Detention Basin / Safe Zone</span>
           </div>
         </>
       )}
@@ -49,8 +49,8 @@ const MapLegend = ({ uploadedFileName, simulationData }) => {
       <div className="legend-separator"></div>
       
       <div className="legend-sources">
-        <div>🛰️ NASA GPM & MODIS Satellites</div>
-        <div>📐 USDA SCS-CN (NEH-4 Physics)</div>
+        <div>NASA GPM & Sentinel Observation</div>
+        <div>USDA SCS-CN Hydrology Standard</div>
       </div>
     </div>
   );

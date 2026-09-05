@@ -1,40 +1,7 @@
 /* ==========================================================================
-   TerraSense Municipal Digital Twin - Docked Sidebar & Gov-Tech Theme
+   TerraSense Municipal Digital Twin - Minimalist Enterprise Sidebar
    ========================================================================== */
 
-:root {
-  --gov-slate-900: #0F172A;
-  --gov-slate-800: #1E293B;
-  --gov-slate-700: #334155;
-  --gov-slate-600: #475569;
-  --gov-slate-500: #64748B;
-  --gov-slate-200: #E2E8F0;
-  --gov-slate-100: #F1F5F9;
-  --gov-slate-50: #F8FAFC;
-  
-  --gov-navy-900: #0A192F;
-  --gov-navy-700: #1E3A8A;
-  --gov-navy-600: #2563EB;
-  --gov-navy-50: #EFF6FF;
-
-  --gov-emerald-700: #047857;
-  --gov-emerald-600: #059669;
-  --gov-emerald-50: #ECFDF5;
-
-  --gov-amber-700: #B45309;
-  --gov-amber-600: #D97706;
-  --gov-amber-50: #FFFBEB;
-
-  --gov-crimson-700: #B91C1C;
-  --gov-crimson-600: #DC2626;
-  --gov-crimson-50: #FEF2F2;
-
-  --white: #FFFFFF;
-}
-
-/* --------------------------------------------------------------------------
-   Docked Right-Hand Sidebar (Never blocks the satellite map)
-   -------------------------------------------------------------------------- */
 .docked-sidebar-wrapper {
   position: fixed;
   top: 0;
@@ -47,10 +14,10 @@
   display: flex;
   flex-direction: column;
   background: #FFFFFF;
-  border-left: 1px solid var(--gov-slate-200);
-  box-shadow: -8px 0 32px rgba(15, 23, 42, 0.12);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  border-left: 1px solid #E2E8F0;
+  box-shadow: -4px 0 24px rgba(15, 23, 42, 0.08);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
 }
 
@@ -62,45 +29,42 @@
 /* Sidebar Toggle Edge Tab Button */
 .sidebar-edge-toggle {
   position: fixed;
-  top: 24px;
+  top: 20px;
   right: 480px;
   z-index: 1001;
-  background: var(--gov-slate-900);
+  background: #0F172A;
   color: #FFFFFF;
-  border: 1px solid var(--gov-slate-700);
+  border: 1px solid #334155;
   border-right: none;
-  border-radius: 10px 0 0 10px;
-  padding: 10px 14px;
-  font-size: 12px;
+  border-radius: 8px 0 0 8px;
+  padding: 8px 12px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: -4px 4px 16px rgba(15, 23, 42, 0.2);
+  box-shadow: -2px 2px 10px rgba(15, 23, 42, 0.15);
   display: flex;
   align-items: center;
   gap: 6px;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
 }
 
 .sidebar-edge-toggle:hover {
-  background: var(--gov-navy-700);
-  padding-left: 18px;
+  background: #1E293B;
+  padding-left: 15px;
 }
 
 .sidebar-edge-toggle.collapsed-pos {
   right: 0;
-  border-radius: 10px 0 0 10px;
-  background: var(--gov-navy-700);
-  box-shadow: -4px 6px 20px rgba(37, 99, 235, 0.3);
+  border-radius: 8px 0 0 8px;
+  background: #0F172A;
 }
 
-/* --------------------------------------------------------------------------
-   Sidebar Header
-   -------------------------------------------------------------------------- */
+/* Sidebar Header */
 .sidebar-header {
-  padding: 18px 20px 14px 20px;
-  background: var(--gov-slate-900);
+  padding: 16px 20px 12px 20px;
+  background: #0F172A;
   color: #FFFFFF;
-  border-bottom: 2px solid var(--gov-navy-600);
+  border-bottom: 1px solid #1E293B;
   flex-shrink: 0;
 }
 
@@ -118,49 +82,46 @@
 }
 
 .sidebar-logo {
-  height: 28px;
+  height: 24px;
   width: auto;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3));
 }
 
 .sidebar-brand-text h1 {
-  font-size: 17px;
-  font-weight: 900;
+  font-size: 15px;
+  font-weight: 800;
   color: #FFFFFF;
   margin: 0;
-  letter-spacing: 0.6px;
-  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .sidebar-brand-text span {
   font-size: 10px;
-  font-weight: 700;
+  font-weight: 600;
   color: #94A3B8;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  letter-spacing: 0.3px;
   display: block;
 }
 
 .sidebar-collapse-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #FFFFFF;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s ease;
+  font-size: 12px;
+  transition: background 0.15s;
 }
 
 .sidebar-collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.16);
 }
 
-/* Quick Actions Button Bar */
+/* Quick Actions Row */
 .sidebar-quick-actions {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -168,144 +129,95 @@
 }
 
 .sidebar-action-btn {
-  padding: 7px 6px;
-  border-radius: 8px;
+  padding: 6px 4px;
+  border-radius: 6px;
   font-size: 10.5px;
   font-weight: 700;
   cursor: pointer;
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #F8FAFC;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  text-align: center;
   transition: all 0.15s ease;
-  white-space: nowrap;
 }
 
-.sidebar-action-btn.emergency-btn {
-  background: var(--gov-crimson-600);
-  color: #FFFFFF;
+.sidebar-action-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
 }
 
 .sidebar-action-btn.emergency-btn:hover {
-  background: var(--gov-crimson-700);
-}
-
-.sidebar-action-btn.benchmark-btn {
-  background: var(--gov-slate-800);
-  color: #E2E8F0;
-  border-color: var(--gov-slate-700);
-}
-
-.sidebar-action-btn.benchmark-btn:hover {
-  background: var(--gov-slate-700);
-  color: #FFFFFF;
-}
-
-.sidebar-action-btn.voice-btn {
-  background: rgba(37, 99, 235, 0.2);
-  color: #93C5FD;
-  border-color: rgba(37, 99, 235, 0.4);
+  background: #DC2626;
+  border-color: #DC2626;
 }
 
 .sidebar-action-btn.voice-btn.active-audio {
-  background: var(--gov-crimson-600);
-  color: #FFFFFF;
-  animation: pulseAudio 1.2s infinite;
-}
-
-.sidebar-action-btn.dpr-btn {
-  background: var(--gov-navy-600);
+  background: #DC2626;
+  border-color: #DC2626;
   color: #FFFFFF;
 }
 
-.sidebar-action-btn.dpr-btn:hover {
-  background: var(--gov-navy-700);
-}
-
-/* --------------------------------------------------------------------------
-   Navigation Tabs
-   -------------------------------------------------------------------------- */
+/* Segmented Navigation Tabs */
 .sidebar-tabs {
   display: flex;
-  background: var(--gov-slate-100);
-  border-bottom: 1px solid var(--gov-slate-200);
-  padding: 4px 6px;
+  background: #F1F5F9;
+  padding: 4px;
   gap: 4px;
+  border-bottom: 1px solid #E2E8F0;
   flex-shrink: 0;
 }
 
 .sidebar-tab-btn {
   flex: 1;
-  padding: 9px 8px;
-  border: none;
+  padding: 7px 10px;
   background: transparent;
-  color: var(--gov-slate-600);
-  font-size: 11px;
-  font-weight: 700;
+  border: none;
   border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #64748B;
   cursor: pointer;
+  transition: all 0.15s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  transition: all 0.15s ease;
 }
 
 .sidebar-tab-btn:hover:not(:disabled) {
-  color: var(--gov-slate-900);
-  background: rgba(255, 255, 255, 0.6);
+  color: #0F172A;
 }
 
 .sidebar-tab-btn.active {
   background: #FFFFFF;
-  color: var(--gov-navy-700);
-  font-weight: 800;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  color: #0F172A;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .sidebar-tab-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* --------------------------------------------------------------------------
-   Tab Scrollable Body
-   -------------------------------------------------------------------------- */
+/* Scrollable Body */
 .sidebar-body {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  background: var(--gov-slate-50);
+  background: #F8FAFC;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.sidebar-body::-webkit-scrollbar {
-  width: 6px;
-}
-
-.sidebar-body::-webkit-scrollbar-track {
-  background: var(--gov-slate-100);
-}
-
-.sidebar-body::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 3px;
-}
-
-.sidebar-body::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
-}
-
-/* --------------------------------------------------------------------------
-   Section Cards (Clean Gov-Tech)
-   -------------------------------------------------------------------------- */
+/* Section Cards */
 .gov-section-card {
   background: #FFFFFF;
-  border: 1px solid var(--gov-slate-200);
-  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
   padding: 14px 16px;
-  margin-bottom: 14px;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .gov-section-header {
@@ -318,47 +230,23 @@
 .gov-section-header h3 {
   font-size: 12.5px;
   font-weight: 800;
-  color: var(--gov-slate-900);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: #0F172A;
   margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  letter-spacing: 0.2px;
 }
 
 .gov-chip {
-  font-size: 10px;
+  font-size: 9.5px;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
   padding: 2px 7px;
   border-radius: 4px;
+  background: #F1F5F9;
+  color: #475569;
 }
 
-.gov-chip.blue {
-  background: var(--gov-navy-50);
-  color: var(--gov-navy-700);
-  border: 1px solid #BFDBFE;
-}
-
-.gov-chip.emerald {
-  background: var(--gov-emerald-50);
-  color: var(--gov-emerald-700);
-  border: 1px solid #A7F3D0;
-}
-
-.gov-chip.crimson {
-  background: var(--gov-crimson-50);
-  color: var(--gov-crimson-700);
-  border: 1px solid #FECACA;
-}
-
-.gov-chip.amber {
-  background: var(--gov-amber-50);
-  color: var(--gov-amber-700);
-  border: 1px solid #FDE68A;
-}
-
-/* System Status Grid */
+/* Status Grid */
 .status-grid-compact {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -366,18 +254,19 @@
 }
 
 .status-box {
-  background: var(--gov-slate-50);
-  border: 1px solid var(--gov-slate-200);
-  border-radius: 8px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
   padding: 8px 10px;
 }
 
 .status-box-label {
   font-size: 9.5px;
-  color: var(--gov-slate-500);
   font-weight: 700;
+  color: #64748B;
+  margin-bottom: 3px;
   text-transform: uppercase;
-  margin-bottom: 2px;
+  letter-spacing: 0.3px;
 }
 
 .status-box-val {
@@ -389,73 +278,74 @@
 }
 
 .status-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  flex-shrink: 0;
+  display: inline-block;
 }
 
 .status-dot.online {
-  background: var(--gov-emerald-600);
+  background: #059669;
 }
 
 .status-dot.offline {
-  background: var(--gov-crimson-600);
+  background: #DC2626;
 }
 
-/* Area Selector Row */
+/* Area Select Row */
 .area-select-row {
   display: flex;
-  justify-content: space-between;
+  gap: 8px;
   align-items: center;
-  background: var(--gov-slate-50);
-  border: 1px solid var(--gov-slate-200);
-  border-radius: 8px;
-  padding: 8px 12px;
 }
 
 .area-select-info {
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--gov-slate-900);
+  flex: 1;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #0F172A;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .area-upload-btn {
-  background: var(--gov-slate-900);
-  color: #FFFFFF;
-  border: none;
-  padding: 6px 12px;
+  background: #F1F5F9;
+  border: 1px solid #CBD5E1;
+  color: #0F172A;
+  padding: 8px 12px;
   border-radius: 6px;
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s;
 }
 
 .area-upload-btn:hover {
-  background: var(--gov-navy-700);
+  background: #E2E8F0;
 }
 
-/* Main Action Run Button */
+/* Run Button */
 .btn-run-analysis-gov {
   width: 100%;
-  background: var(--gov-navy-700);
+  background: #0F172A;
   color: #FFFFFF;
-  border: none;
-  padding: 12px;
+  border: 1px solid #1E293B;
+  padding: 10px 16px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.25);
-  transition: all 0.2s ease;
+  transition: background 0.15s;
+  letter-spacing: 0.3px;
 }
 
 .btn-run-analysis-gov:hover:not(:disabled) {
-  background: var(--gov-navy-900);
-  transform: translateY(-1px);
+  background: #1E293B;
 }
 
 .btn-run-analysis-gov:disabled {
@@ -463,7 +353,24 @@
   cursor: not-allowed;
 }
 
-/* Scenario Selector 2x2 Grid */
+/* Weather Sync Button */
+.weather-sync-btn {
+  background: #0F172A;
+  color: #FFFFFF;
+  border: none;
+  padding: 4px 9px;
+  border-radius: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.weather-sync-btn:hover:not(:disabled) {
+  background: #1E293B;
+}
+
+/* Scenario Grid */
 .scenario-grid-gov {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -471,40 +378,35 @@
 }
 
 .scenario-card-btn {
-  background: #FFFFFF;
-  border: 1px solid var(--gov-slate-200);
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   border-radius: 8px;
   padding: 10px;
-  text-align: left;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s;
+  text-align: left;
 }
 
 .scenario-card-btn:hover {
-  border-color: var(--gov-navy-600);
-  background: var(--gov-navy-50);
+  border-color: #94A3B8;
+  background: #FFFFFF;
 }
 
 .scenario-card-btn.active {
-  background: var(--gov-navy-50);
-  border: 2px solid var(--gov-navy-700);
+  border-color: #0F172A;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 1px #0F172A;
 }
 
 .scenario-card-title {
   font-size: 11.5px;
   font-weight: 800;
-  color: var(--gov-slate-900);
+  color: #0F172A;
   margin-bottom: 2px;
 }
 
 .scenario-card-sub {
   font-size: 10px;
-  color: var(--gov-slate-500);
-  font-weight: 600;
-}
-
-@keyframes pulseAudio {
-  0% { opacity: 1; }
-  50% { opacity: 0.7; }
-  100% { opacity: 1; }
+  color: #64748B;
+  line-height: 1.3;
 }

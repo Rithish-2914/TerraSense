@@ -1,156 +1,179 @@
-/* UrbanClimate Digital Twin - All Styles */
+/* ==========================================================================
+   TerraSense Digital Twin - Enterprise Design System
+   ========================================================================== */
 
-/* Global styles */
-* {
+:root {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, Menlo, monospace;
+
+  /* Neutral Slate Scale */
+  --slate-950: #020617;
+  --slate-900: #0F172A;
+  --slate-800: #1E293B;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748B;
+  --slate-400: #94A3B8;
+  --slate-300: #CBD5E1;
+  --slate-200: #E2E8F0;
+  --slate-100: #F1F5F9;
+  --slate-50: #F8FAFC;
+  --white: #FFFFFF;
+
+  /* Semantic Accents - Controlled & Functional */
+  --accent-primary: #0F172A;
+  --accent-primary-hover: #1E293B;
+  --accent-blue: #2563EB;
+  --accent-blue-subtle: #EFF6FF;
+  
+  --status-emerald: #059669;
+  --status-emerald-bg: #ECFDF5;
+  --status-emerald-border: #A7F3D0;
+
+  --status-amber: #D97706;
+  --status-amber-bg: #FFFBEB;
+  --status-amber-border: #FDE68A;
+
+  --status-crimson: #DC2626;
+  --status-crimson-bg: #FEF2F2;
+  --status-crimson-border: #FECACA;
+
+  /* Elevation Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+
+/* Global Reset & Base */
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-  background: #f5f5f5;
+  font-family: var(--font-sans);
+  background: var(--slate-950);
+  color: var(--slate-900);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
 }
 
-/* Layout */
+/* App Layout */
 .app {
   height: 100vh;
+  width: 100vw;
   display: flex;
+  position: relative;
+  overflow: hidden;
 }
 
 .map-container {
   flex: 1;
   height: 100vh;
   position: relative;
+  background: #111827;
 }
 
-/* Control Panel */
-.control-panel {
-  width: 400px;
-  background: white;
-  border-left: 1px solid #ddd;
-  overflow-y: auto;
-  padding: 20px;
+/* Custom Minimalist Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.header {
-  background: #2c3e50;
-  color: white;
-  padding: 15px 20px;
-  margin: -20px -20px 20px -20px;
-  border-radius: 0;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.header h1 {
-  font-size: 18px;
-  margin-bottom: 5px;
-  font-weight: 600;
+::-webkit-scrollbar-thumb {
+  background: var(--slate-300);
+  border-radius: 4px;
 }
 
-.header p {
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-.section {
-  margin-bottom: 25px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.section:last-child {
-  border-bottom: none;
-}
-
-.section h3 {
-  color: #2c3e50;
-  margin-bottom: 15px;
-  font-size: 14px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 600;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--slate-400);
 }
 
 /* Buttons */
-.btn {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+button {
+  font-family: inherit;
+  outline: none;
+}
+
+.btn-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
   font-weight: 600;
-  transition: all 0.3s ease;
-  width: 100%;
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: #3498db;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #2980b9;
-  transform: translateY(-1px);
-}
-
-.btn-secondary {
-  background: #95a5a6;
-  color: white;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #7f8c8d;
-  transform: translateY(-1px);
-}
-
-.scenario-controls {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-}
-
-.scenario-btn {
-  flex: 1;
-  padding: 8px 12px;
-  border: 2px solid #3498db;
-  background: white;
-  color: #3498db;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.scenario-btn:hover {
-  background: #ecf0f1;
-}
-
-.scenario-btn.active {
-  background: #3498db;
-  color: white;
-}
-
-/* Cards */
-.metrics-card {
-  background: linear-gradient(135deg, #ecf0f1 0%, #d5dbdb 100%);
-  padding: 15px;
   border-radius: 8px;
-  margin-bottom: 15px;
-  border: 1px solid #bdc3c7;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.btn-primary-dark {
+  background: var(--slate-900);
+  color: var(--white);
+  border-color: var(--slate-800);
+}
+
+.btn-primary-dark:hover {
+  background: var(--slate-800);
+}
+
+.btn-secondary-light {
+  background: var(--white);
+  color: var(--slate-700);
+  border-color: var(--slate-300);
+}
+
+.btn-secondary-light:hover {
+  background: var(--slate-50);
+  color: var(--slate-900);
+  border-color: var(--slate-400);
+}
+
+/* Leaflet Container */
+.leaflet-container {
+  height: 100vh;
+  width: 100%;
+  z-index: 1;
+  background: #0f172a !important;
+}
+
+/* Sections & Clean Metric Cards */
+.section {
+  margin-bottom: 14px;
+}
+
+.section h3 {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--slate-900);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 8px;
+}
+
+.metrics-card {
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
 }
 
 .metric-item {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 8px;
-  font-size: 13px;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 11.5px;
 }
 
 .metric-item:last-child {
@@ -158,116 +181,22 @@ body {
 }
 
 .metric-label {
-  color: #7f8c8d;
+  color: var(--slate-600);
   font-weight: 500;
 }
 
 .metric-value {
   font-weight: 700;
-  color: #2c3e50;
+  color: var(--slate-900);
 }
 
-.intervention-card {
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  padding: 15px;
-  margin-bottom: 12px;
-  background: white;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.intervention-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  transform: translateY(-1px);
-}
-
-.intervention-title {
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 8px;
-  font-size: 14px;
-}
-
-.intervention-desc {
-  font-size: 12px;
-  color: #7f8c8d;
-  margin-bottom: 10px;
-  line-height: 1.4;
-}
-
-.intervention-details {
-  font-size: 11px;
-  color: #95a5a6;
-  line-height: 1.3;
-}
-
-.intervention-details > div {
-  margin-bottom: 3px;
-}
-
-.intervention-details > div:last-child {
-  margin-bottom: 0;
-}
-
-/* Loading Components */
-.loading-spinner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  color: #7f8c8d;
-}
-
-.spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #ecf0f1;
-  border-top: 2px solid #3498db;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 10px;
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-/* Leaflet overrides */
-.leaflet-container {
-  height: 100vh;
-  width: 100%;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .app {
-    flex-direction: column;
-  }
-  
-  .control-panel {
-    width: 100%;
-    height: 50vh;
-    order: 2;
-  }
-  
-  .map-container {
-    height: 50vh;
-    order: 1;
-  }
-}
-
-/* Loading Animation */
-@keyframes loading {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(0%); }
-  100% { transform: translateX(100%); }
-}
-
-/* Toast Animation */
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
 }

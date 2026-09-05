@@ -7,6 +7,7 @@ import Toast from './components/Toast';
 import MapLegend from './components/MapLegend';
 import MultiCityBenchmarkModal from './components/MultiCityBenchmarkModal';
 import EmergencyHotlineModal from './components/EmergencyHotlineModal';
+import DPRReportModal from './components/DPRReportModal';
 
 const CITY_GEOJSONS = {
   'trichy_area.geojson': {
@@ -129,6 +130,7 @@ function App() {
   const [stormIntensity, setStormIntensity] = useState(180);
   const [isBenchmarkOpen, setIsBenchmarkOpen] = useState(false);
   const [isEmergencyHotlineOpen, setIsEmergencyHotlineOpen] = useState(false);
+  const [isDPROpen, setIsDPROpen] = useState(false);
   
   // Check backend and Earth Engine status
   useEffect(() => {
@@ -549,14 +551,15 @@ function App() {
         top: 16, 
         left: 60, 
         zIndex: 999, 
-        background: 'rgba(255, 255, 255, 0.96)',
-        border: '1px solid #CBD5E1',
-        boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
-        padding: '12px 18px', 
-        borderRadius: '12px', 
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(8px)',
+        border: '1px solid #E2E8F0',
+        boxShadow: '0 4px 16px rgba(15, 23, 42, 0.08)',
+        padding: '10px 16px', 
+        borderRadius: '10px', 
         fontSize: '12px',
-        fontWeight: '700',
-        minWidth: '280px',
+        fontWeight: '600',
+        minWidth: '270px',
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
       }}>
         <div style={{
@@ -570,7 +573,7 @@ function App() {
               src="/nasa-logo.svg" 
               alt="NASA" 
               style={{
-                height: '24px', 
+                height: '20px', 
                 width: 'auto',
                 flexShrink: 0
               }}
@@ -581,22 +584,20 @@ function App() {
             <div>
               <div style={{
                 color: '#0F172A',
-                fontSize: '13px',
-                fontWeight: '900',
-                textTransform: 'uppercase',
-                letterSpacing: '0.4px',
+                fontSize: '12.5px',
+                fontWeight: '800',
+                letterSpacing: '0.3px',
                 lineHeight: '1.2'
               }}>
-                TERRASENSE DIGITAL TWIN
+                TerraSense Digital Twin
               </div>
               <div style={{
                 fontSize: '9.5px', 
                 color: '#64748B',
-                fontWeight: '700',
-                textTransform: 'uppercase',
-                letterSpacing: '0.3px'
+                fontWeight: '600',
+                letterSpacing: '0.2px'
               }}>
-                Smart Cities GIS • Urban Hydro-Spatial Twin
+                Urban Hydro-Spatial Decision Support
               </div>
             </div>
           </div>
@@ -604,7 +605,7 @@ function App() {
 
         <div style={{
           fontSize: '11px', 
-          color: '#334155',
+          color: '#475569',
           fontWeight: '600',
           display: 'flex',
           alignItems: 'center',
@@ -613,26 +614,22 @@ function App() {
           paddingTop: '6px',
           marginTop: '6px'
         }}>
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <span>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
               <span style={{
-                display: 'inline-block',
-                width: '7px',
-                height: '7px',
+                width: '6px',
+                height: '6px',
                 borderRadius: '50%',
-                backgroundColor: backendStatus === 'connected' ? '#059669' : '#DC2626',
-                marginRight: '5px'
+                backgroundColor: backendStatus === 'connected' ? '#059669' : '#DC2626'
               }}></span>
               Backend: {backendStatus === 'connected' ? 'Online' : 'Offline'}
             </span>
-            <span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
               <span style={{
-                display: 'inline-block',
-                width: '7px',
-                height: '7px',
+                width: '6px',
+                height: '6px',
                 borderRadius: '50%',
-                backgroundColor: earthEngineStatus === 'connected' ? '#059669' : '#0284C7',
-                marginRight: '5px'
+                backgroundColor: earthEngineStatus === 'connected' ? '#059669' : '#2563EB'
               }}></span>
               Satellite: {earthEngineStatus === 'connected' ? 'GEE Live' : 'Calibrated'}
             </span>
@@ -641,20 +638,23 @@ function App() {
           <button
             onClick={() => setIsEmergencyHotlineOpen(true)}
             style={{
-              background: '#DC2626',
+              background: '#0F172A',
               color: '#FFFFFF',
-              border: 'none',
-              padding: '3px 8px',
-              borderRadius: '5px',
-              fontSize: '10px',
-              fontWeight: '800',
+              border: '1px solid #1E293B',
+              padding: '4px 9px',
+              borderRadius: '6px',
+              fontSize: '10.5px',
+              fontWeight: '700',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '3px'
+              gap: '4px',
+              transition: 'background 0.15s'
             }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#DC2626'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#0F172A'}
           >
-            <span>🚨 DEOC 1077</span>
+            <span>DEOC 1077</span>
           </button>
         </div>
       </div>
@@ -693,6 +693,7 @@ function App() {
         onStormIntensityChange={handleStormIntensityChange}
         onOpenBenchmark={() => setIsBenchmarkOpen(true)}
         onOpenHotline={() => setIsEmergencyHotlineOpen(true)}
+        onOpenDPR={() => setIsDPROpen(true)}
         mitigationReductionPct={mitigationReductionPct}
       />
 
@@ -707,6 +708,16 @@ function App() {
         isOpen={isEmergencyHotlineOpen}
         onClose={() => setIsEmergencyHotlineOpen(false)}
         onShowToast={setToast}
+      />
+
+      <DPRReportModal 
+        isOpen={isDPROpen}
+        onClose={() => setIsDPROpen(false)}
+        simulationData={activeSimulationData}
+        uploadedFileName={uploadedFileName}
+        scenario={scenario}
+        stormIntensity={stormIntensity}
+        mitigationReductionPct={mitigationReductionPct}
       />
 
       {toast && (

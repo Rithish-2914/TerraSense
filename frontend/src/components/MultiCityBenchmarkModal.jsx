@@ -10,7 +10,7 @@ const CITIES_DATA = [
     areaHa: 100,
     elevationMsl: '+85m MSL',
     imperviousPct: 65,
-    cloudburstRisk: 'Severe (+74%)',
+    cloudburstRisk: '+74% Surge',
     peopleAtRisk: 1480,
     lstTemp: '34.2°C',
     recommendedBudgetCr: '₹1.65 Cr',
@@ -26,11 +26,11 @@ const CITIES_DATA = [
     areaHa: 280,
     elevationMsl: '+8m MSL',
     imperviousPct: 84,
-    cloudburstRisk: 'Critical (+115%)',
+    cloudburstRisk: '+115% Surge',
     peopleAtRisk: 5200,
     lstTemp: '36.8°C',
     recommendedBudgetCr: '₹4.80 Cr',
-    primaryIntervention: 'Underground Holding Vaults & Mangrove Sinks',
+    primaryIntervention: 'Underground Holding Vaults & Mangroves',
     riskLevel: 'Critical'
   },
   {
@@ -42,7 +42,7 @@ const CITIES_DATA = [
     areaHa: 210,
     elevationMsl: '+7m MSL',
     imperviousPct: 78,
-    cloudburstRisk: 'Severe (+92%)',
+    cloudburstRisk: '+92% Surge',
     peopleAtRisk: 4100,
     lstTemp: '37.5°C',
     recommendedBudgetCr: '₹3.40 Cr',
@@ -58,11 +58,11 @@ const CITIES_DATA = [
     areaHa: 190,
     elevationMsl: '+920m MSL',
     imperviousPct: 72,
-    cloudburstRisk: 'High (+65%)',
+    cloudburstRisk: '+65% Surge',
     peopleAtRisk: 2900,
     lstTemp: '31.4°C',
     recommendedBudgetCr: '₹2.90 Cr',
-    primaryIntervention: 'Lake Inflow Silt Traps & Permeable Pavements',
+    primaryIntervention: 'Lake Silt Traps & Permeable Pavements',
     riskLevel: 'High'
   },
   {
@@ -74,11 +74,11 @@ const CITIES_DATA = [
     areaHa: 240,
     elevationMsl: '+216m MSL',
     imperviousPct: 81,
-    cloudburstRisk: 'Severe (+88%)',
+    cloudburstRisk: '+88% Surge',
     peopleAtRisk: 4800,
     lstTemp: '39.8°C',
     recommendedBudgetCr: '₹4.10 Cr',
-    primaryIntervention: 'Floodplain Sponge Wetlands & Cool Pavements',
+    primaryIntervention: 'Floodplain Sponge Wetlands & Cool Roofs',
     riskLevel: 'Critical'
   },
   {
@@ -90,11 +90,11 @@ const CITIES_DATA = [
     areaHa: 175,
     elevationMsl: '+9m MSL',
     imperviousPct: 76,
-    cloudburstRisk: 'High (+70%)',
+    cloudburstRisk: '+70% Surge',
     peopleAtRisk: 3400,
     lstTemp: '35.0°C',
     recommendedBudgetCr: '₹2.75 Cr',
-    primaryIntervention: 'Tidal Sluice Automation & Wetland Retention',
+    primaryIntervention: 'Tidal Sluice Automation & Wetland Storage',
     riskLevel: 'High'
   }
 ];
@@ -111,59 +111,60 @@ const MultiCityBenchmarkModal = ({ isOpen, onClose, onSelectCity, currentCityNam
       bottom: 0,
       zIndex: 9999,
       background: 'rgba(15, 23, 42, 0.7)',
+      backdropFilter: 'blur(6px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px'
-    }}>
+    }} onClick={onClose}>
       <div style={{
         background: '#FFFFFF',
-        borderRadius: '16px',
+        borderRadius: '12px',
         width: '100%',
-        maxWidth: '1050px',
+        maxWidth: '1000px',
         maxHeight: '88vh',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.35)',
+        boxShadow: '0 20px 40px rgba(15, 23, 42, 0.25)',
         overflow: 'hidden',
         border: '1px solid #CBD5E1',
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-      }}>
+      }} onClick={e => e.stopPropagation()}>
         {/* Modal Header */}
         <div style={{
           background: '#0F172A',
           color: '#FFFFFF',
-          padding: '18px 24px',
+          padding: '16px 22px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '3px solid #1E3A8A'
+          borderBottom: '1px solid #1E293B'
         }}>
           <div>
             <div style={{
-              fontSize: '10.5px',
-              fontWeight: '800',
+              fontSize: '10px',
+              fontWeight: '700',
               color: '#94A3B8',
               textTransform: 'uppercase',
-              letterSpacing: '0.8px',
-              marginBottom: '3px'
+              letterSpacing: '0.6px',
+              marginBottom: '2px'
             }}>
-              SMART CITIES MISSION • NATIONAL VULNERABILITY INDEX
+              National Smart Cities Benchmark Matrix
             </div>
-            <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '800', letterSpacing: '0.3px', color: '#FFFFFF' }}>
-              Multi-City Climate Digital Twin Comparative Matrix
+            <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#FFFFFF' }}>
+              Multi-Catchment Hydro-Spatial Matrix
             </h2>
           </div>
           <button
             onClick={onClose}
             style={{
-              background: 'rgba(255, 255, 255, 0.1)',
+              background: 'rgba(255, 255, 255, 0.08)',
               border: 'none',
               color: '#FFFFFF',
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              fontSize: '16px',
+              width: '28px',
+              height: '28px',
+              borderRadius: '6px',
+              fontSize: '13px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -175,21 +176,21 @@ const MultiCityBenchmarkModal = ({ isOpen, onClose, onSelectCity, currentCityNam
         </div>
 
         {/* Modal Body */}
-        <div style={{ padding: '20px 24px', overflowY: 'auto', background: '#F8FAFC' }}>
-          <p style={{ margin: '0 0 14px 0', fontSize: '12.5px', color: '#475569', lineHeight: 1.5 }}>
-            Calibrated spatial hydrology baselines across 6 Indian major municipal catchments. Click <strong>"Simulate in Twin"</strong> to switch the active spatial bounding box.
+        <div style={{ padding: '18px 22px', overflowY: 'auto', background: '#F8FAFC' }}>
+          <p style={{ margin: '0 0 12px 0', fontSize: '12px', color: '#475569', lineHeight: 1.4 }}>
+            Calibrated spatial hydrology baselines across 6 Indian municipal catchments. Click <strong>"Simulate in Twin"</strong> to switch the active spatial bounding box.
           </p>
 
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', background: '#FFFFFF', borderRadius: '10px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left', background: '#FFFFFF', borderRadius: '8px', overflow: 'hidden', border: '1px solid #E2E8F0' }}>
             <thead>
-              <tr style={{ background: '#F1F5F9', borderBottom: '2px solid #CBD5E1' }}>
-                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '800' }}>City / Catchment</th>
-                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '800' }}>River Basin</th>
-                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '800' }}>Elevation</th>
-                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '800' }}>Impervious</th>
-                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '800' }}>Cloudburst Surge</th>
-                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '800' }}>DPR Budget</th>
-                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '800', textAlign: 'center' }}>Action</th>
+              <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #CBD5E1' }}>
+                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '700' }}>Catchment</th>
+                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '700' }}>River Basin</th>
+                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '700' }}>Elevation</th>
+                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '700' }}>Impervious</th>
+                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '700' }}>Surge Risk</th>
+                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '700' }}>DPR Budget</th>
+                <th style={{ padding: '10px 12px', color: '#0F172A', fontWeight: '700', textAlign: 'center' }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -200,48 +201,47 @@ const MultiCityBenchmarkModal = ({ isOpen, onClose, onSelectCity, currentCityNam
                     key={city.id} 
                     style={{ 
                       borderBottom: '1px solid #E2E8F0',
-                      background: isActive ? '#EFF6FF' : idx % 2 === 0 ? '#FFFFFF' : '#FAFCFE',
+                      background: isActive ? '#F1F5F9' : '#FFFFFF',
                       transition: 'background 0.15s'
                     }}
                   >
                     <td style={{ padding: '10px 12px' }}>
-                      <div style={{ fontWeight: '800', color: '#1E3A8A' }}>{city.name}</div>
+                      <div style={{ fontWeight: '800', color: '#0F172A' }}>{city.name}</div>
                       <div style={{ fontSize: '10px', color: '#64748B' }}>{city.state} • {city.areaHa} Ha</div>
                     </td>
                     <td style={{ padding: '10px 12px', color: '#334155' }}>{city.basin}</td>
-                    <td style={{ padding: '10px 12px', fontWeight: '700', color: '#0F172A' }}>{city.elevationMsl}</td>
+                    <td style={{ padding: '10px 12px', fontWeight: '600', color: '#0F172A' }}>{city.elevationMsl}</td>
                     <td style={{ padding: '10px 12px' }}>
-                      <span style={{ fontWeight: '700', color: city.imperviousPct > 80 ? '#DC2626' : '#0F172A' }}>
+                      <span style={{ fontWeight: '700', color: '#0F172A' }}>
                         {city.imperviousPct}%
                       </span>
                     </td>
                     <td style={{ padding: '10px 12px' }}>
                       <span style={{
-                        background: city.riskLevel === 'Critical' ? '#FEF2F2' : '#FFFBEB',
+                        background: '#F1F5F9',
                         color: city.riskLevel === 'Critical' ? '#DC2626' : '#D97706',
-                        padding: '2px 7px',
+                        padding: '2px 6px',
                         borderRadius: '4px',
-                        fontWeight: '800',
-                        fontSize: '11px',
-                        border: city.riskLevel === 'Critical' ? '1px solid #FECACA' : '1px solid #FDE68A'
+                        fontWeight: '700',
+                        fontSize: '10.5px'
                       }}>
                         {city.cloudburstRisk}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 12px', fontWeight: '800', color: '#047857' }}>
+                    <td style={{ padding: '10px 12px', fontWeight: '700', color: '#0F172A' }}>
                       {city.recommendedBudgetCr}
                     </td>
                     <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                       {isActive ? (
                         <span style={{
-                          background: '#DBEAFE',
-                          color: '#1D4ED8',
-                          padding: '5px 10px',
-                          borderRadius: '6px',
-                          fontWeight: '800',
+                          background: '#E2E8F0',
+                          color: '#0F172A',
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontWeight: '700',
                           fontSize: '10.5px'
                         }}>
-                          ✓ Active Now
+                          Active Now
                         </span>
                       ) : (
                         <button
@@ -250,11 +250,11 @@ const MultiCityBenchmarkModal = ({ isOpen, onClose, onSelectCity, currentCityNam
                             onClose();
                           }}
                           style={{
-                            background: '#1E3A8A',
+                            background: '#0F172A',
                             color: '#FFFFFF',
                             border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '6px',
+                            padding: '5px 12px',
+                            borderRadius: '5px',
                             fontWeight: '700',
                             fontSize: '11px',
                             cursor: 'pointer'

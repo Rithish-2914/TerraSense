@@ -35,7 +35,7 @@ const BoQModal = ({ intervention, areaHa, isOpen, onClose }) => {
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(15, 23, 42, 0.75)',
+      background: 'rgba(15, 23, 42, 0.7)',
       backdropFilter: 'blur(6px)',
       zIndex: 10000,
       display: 'flex',
@@ -45,14 +45,14 @@ const BoQModal = ({ intervention, areaHa, isOpen, onClose }) => {
     }} onClick={onClose}>
       <div style={{
         background: '#FFFFFF',
-        borderRadius: '16px',
+        borderRadius: '12px',
         maxWidth: '680px',
         width: '100%',
         maxHeight: '85vh',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.35)',
+        boxShadow: '0 20px 40px rgba(15, 23, 42, 0.25)',
         border: '1px solid #CBD5E1',
         fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
       }} onClick={e => e.stopPropagation()}>
@@ -63,81 +63,81 @@ const BoQModal = ({ intervention, areaHa, isOpen, onClose }) => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          borderBottom: '3px solid #059669'
+          borderBottom: '1px solid #1E293B'
         }}>
           <div>
-            <div style={{ fontSize: '10px', color: '#94A3B8', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-              CPWD DSR 2024-25 • OFFICIAL BILL OF QUANTITIES (BOQ)
+            <div style={{ fontSize: '10px', color: '#94A3B8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              CPWD DSR 2024-25 • Bill of Quantities (BoQ)
             </div>
-            <h3 style={{ margin: '3px 0 0 0', fontSize: '15px', color: '#FFFFFF' }}>
+            <h3 style={{ margin: '3px 0 0 0', fontSize: '15px', color: '#FFFFFF', fontWeight: '800' }}>
               {intervention.title || intervention.name}
             </h3>
           </div>
           <button onClick={onClose} style={{
-            background: 'rgba(255,255,255,0.12)',
+            background: 'rgba(255,255,255,0.08)',
             border: 'none',
             color: '#FFFFFF',
-            width: '30px',
-            height: '30px',
+            width: '28px',
+            height: '28px',
             borderRadius: '6px',
-            fontSize: '14px',
+            fontSize: '13px',
             cursor: 'pointer'
           }}>✕</button>
         </div>
 
         <div style={{ padding: '18px 20px', overflowY: 'auto', background: '#F8FAFC' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
-            <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700' }}>TENDER SCHEME</div>
               <div style={{ fontWeight: '800', fontSize: '12px', color: '#0F172A' }}>{intervention.tender_code || 'AMRUT-2.0/SPONGE/01'}</div>
             </div>
-            <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700' }}>SANCTIONED COST</div>
-              <div style={{ fontWeight: '900', fontSize: '14px', color: '#059669' }}>
+              <div style={{ fontWeight: '800', fontSize: '13px', color: '#0F172A' }}>
                 {costLakhs >= 100 ? `₹${(costLakhs/100).toFixed(2)} Cr` : `₹${costLakhs.toFixed(1)} Lakhs`}
               </div>
             </div>
-            <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+            <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
               <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700' }}>STORAGE ABATED</div>
-              <div style={{ fontWeight: '800', fontSize: '12px', color: '#0284C7' }}>
+              <div style={{ fontWeight: '800', fontSize: '12px', color: '#0F172A' }}>
                 {(intervention.storage_capacity_m3 || Math.round(areaHa * 180)).toLocaleString()} m³
               </div>
             </div>
           </div>
 
-          <div style={{ fontSize: '11px', fontWeight: '800', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
+          <div style={{ fontSize: '11px', fontWeight: '700', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
             Itemized Schedule of Works (CPWD Delhi Schedule of Rates)
           </div>
 
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', background: '#FFFFFF', borderRadius: '8px', overflow: 'hidden', border: '1px solid #CBD5E1', marginBottom: '12px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', background: '#FFFFFF', borderRadius: '6px', overflow: 'hidden', border: '1px solid #E2E8F0', marginBottom: '12px' }}>
             <thead>
-              <tr style={{ background: '#F1F5F9', borderBottom: '2px solid #CBD5E1', textAlign: 'left' }}>
-                <th style={{ padding: '8px 10px', color: '#0F172A' }}>DSR Code</th>
-                <th style={{ padding: '8px 10px', color: '#0F172A' }}>Description of Work</th>
-                <th style={{ padding: '8px 10px', color: '#0F172A' }}>Qty</th>
-                <th style={{ padding: '8px 10px', color: '#0F172A' }}>Schedule Rate</th>
-                <th style={{ padding: '8px 10px', color: '#0F172A', textAlign: 'right' }}>Amount</th>
+              <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #CBD5E1', textAlign: 'left' }}>
+                <th style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '700' }}>DSR Code</th>
+                <th style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '700' }}>Description of Work</th>
+                <th style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '700' }}>Qty</th>
+                <th style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '700' }}>Schedule Rate</th>
+                <th style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '700', textAlign: 'right' }}>Amount</th>
               </tr>
             </thead>
             <tbody>
               {cpwdItems.map((it, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                  <td style={{ padding: '8px 10px', fontWeight: '700', color: '#1E3A8A', fontFamily: 'monospace' }}>{it.code}</td>
+                  <td style={{ padding: '8px 10px', fontWeight: '700', color: '#0F172A', fontFamily: 'monospace' }}>{it.code}</td>
                   <td style={{ padding: '8px 10px', color: '#334155' }}>{it.item}</td>
                   <td style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '600' }}>{it.qty}</td>
                   <td style={{ padding: '8px 10px', color: '#64748B' }}>{it.rate}</td>
-                  <td style={{ padding: '8px 10px', fontWeight: '800', color: '#0F172A', textAlign: 'right' }}>{it.amt}</td>
+                  <td style={{ padding: '8px 10px', fontWeight: '700', color: '#0F172A', textAlign: 'right' }}>{it.amt}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '8px', padding: '10px 12px', fontSize: '11px', color: '#1E40AF' }}>
-            <strong>🏛️ CPWD Statutory Compliance:</strong> Includes 18% GST, 3% Civil Quality Inspection & Contingency, and 5-Year Maintenance Warranty.
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '8px 12px', fontSize: '10.5px', color: '#475569' }}>
+            <strong>CPWD Statutory Compliance:</strong> Includes 18% GST, 3% Civil Quality Inspection & Contingency, and 5-Year Maintenance Warranty.
           </div>
         </div>
 
-        <div style={{ padding: '12px 20px', background: '#FFFFFF', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+        <div style={{ padding: '12px 20px', background: '#FFFFFF', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{
             background: '#0F172A',
             color: '#FFFFFF',
@@ -162,18 +162,18 @@ const InterventionCard = ({ intervention, index, isSelected, onToggle, areaHa, s
   return (
     <div 
       style={{
-        border: isSelected ? '2px solid #059669' : '1px solid #E2E8F0',
-        background: isSelected ? '#F0FDF4' : '#FFFFFF',
-        borderRadius: '10px',
+        border: isSelected ? '1px solid #0F172A' : '1px solid #E2E8F0',
+        background: '#FFFFFF',
+        borderRadius: '8px',
         padding: '12px 14px',
         marginBottom: '10px',
-        boxShadow: isSelected ? '0 2px 8px rgba(5, 150, 105, 0.12)' : '0 1px 3px rgba(0,0,0,0.03)',
-        transition: 'all 0.18s ease'
+        boxShadow: isSelected ? '0 2px 6px rgba(15, 23, 42, 0.08)' : '0 1px 2px rgba(0,0,0,0.02)',
+        transition: 'all 0.15s ease'
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-        <div style={{ fontWeight: '800', fontSize: '12px', color: isSelected ? '#065F46' : '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '5px' }}>
-          <span>#{index + 1}.</span> {intervention.title || intervention.name}
+        <div style={{ fontWeight: '800', fontSize: '12px', color: '#0F172A', margin: 0 }}>
+          {index + 1}. {intervention.title || intervention.name}
         </div>
         <button
           onClick={(e) => {
@@ -181,17 +181,18 @@ const InterventionCard = ({ intervention, index, isSelected, onToggle, areaHa, s
             onToggle(index);
           }}
           style={{
-            fontSize: '10px',
-            fontWeight: '800',
-            padding: '3px 9px',
+            fontSize: '10.5px',
+            fontWeight: '700',
+            padding: '4px 10px',
             borderRadius: '5px',
-            background: isSelected ? '#DCFCE7' : '#F1F5F9',
-            color: isSelected ? '#166534' : '#475569',
-            border: isSelected ? '1px solid #86EFAC' : '1px solid #CBD5E1',
-            cursor: 'pointer'
+            background: isSelected ? '#0F172A' : '#F1F5F9',
+            color: isSelected ? '#FFFFFF' : '#475569',
+            border: isSelected ? '1px solid #0F172A' : '1px solid #CBD5E1',
+            cursor: 'pointer',
+            transition: 'all 0.15s'
           }}
         >
-          {isSelected ? '✓ Sanctioned in DPR' : '+ Click to Tender'}
+          {isSelected ? 'Active in Sandbox' : '+ Add to Sandbox'}
         </button>
       </div>
 
@@ -199,28 +200,28 @@ const InterventionCard = ({ intervention, index, isSelected, onToggle, areaHa, s
         {intervention.description}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', fontSize: '10.5px', borderTop: '1px solid #E2E8F0', paddingTop: '6px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', fontSize: '10.5px', borderTop: '1px solid #F1F5F9', paddingTop: '6px' }}>
         <div>
           <span style={{ color: '#64748B' }}>Runoff Cut: </span>
           <strong style={{ color: '#059669' }}>-{intervention.runoff_reduction_pct || intervention.target_runoff_reduction_pct || 18}%</strong>
         </div>
         <div>
-          <span style={{ color: '#64748B' }}>CPWD Cost: </span>
+          <span style={{ color: '#64748B' }}>Estimated Cost: </span>
           <strong style={{ color: '#0F172A' }}>{costFormatted}</strong>
         </div>
         <div>
-          <span style={{ color: '#64748B' }}>Retention: </span>
-          <strong style={{ color: '#0284C7' }}>{storageM3.toLocaleString()} m³</strong>
+          <span style={{ color: '#64748B' }}>Detention: </span>
+          <strong style={{ color: '#0F172A' }}>{storageM3.toLocaleString()} m³</strong>
         </div>
         <div>
           <span style={{ color: '#64748B' }}>Timeline: </span>
-          <strong style={{ color: '#334155' }}>{intervention.implementation_months || 6} Mos</strong>
+          <strong style={{ color: '#334155' }}>{intervention.implementation_months || 6} Months</strong>
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '6px', borderTop: '1px dashed #E2E8F0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid #F1F5F9' }}>
         <span style={{ fontSize: '9.5px', color: '#64748B', fontFamily: 'monospace' }}>
-          🏛️ {intervention.tender_code || `AMRUT-2.0/PKG-0${index + 1}`}
+          {intervention.tender_code || `AMRUT-2.0/PKG-0${index + 1}`}
         </span>
         <button
           onClick={(e) => {
@@ -228,17 +229,17 @@ const InterventionCard = ({ intervention, index, isSelected, onToggle, areaHa, s
             onOpenBoQ(intervention);
           }}
           style={{
-            background: '#F1F5F9',
-            color: '#1E3A8A',
+            background: '#F8FAFC',
+            color: '#0F172A',
             border: '1px solid #CBD5E1',
-            padding: '2px 8px',
+            padding: '3px 8px',
             borderRadius: '4px',
             fontSize: '10px',
             fontWeight: '700',
             cursor: 'pointer'
           }}
         >
-          📋 View CPWD BoQ
+          View CPWD BoQ
         </button>
       </div>
     </div>
@@ -273,7 +274,7 @@ const InterventionsSection = ({ interventions, loading, simulationData, onMitiga
     if (mode === 'all') {
       setSelectedIndices(interventions.map((_, i) => i));
     } else if (mode === 'priority') {
-      setSelectedIndices([0, 2]); // NBS + Subsurface Vault
+      setSelectedIndices([0, 2]);
     } else if (mode === 'clear') {
       setSelectedIndices([]);
     }
@@ -317,55 +318,55 @@ const InterventionsSection = ({ interventions, loading, simulationData, onMitiga
 
   return (
     <div style={{ marginBottom: '16px' }}>
-      {/* Official Capital Budgeting Balance Sheet */}
+      {/* Capital Budgeting Balance Sheet */}
       <div style={{
         background: '#FFFFFF',
-        border: '1px solid #CBD5E1',
-        borderRadius: '12px',
+        border: '1px solid #E2E8F0',
+        borderRadius: '10px',
         padding: '14px 16px',
-        marginBottom: '14px',
-        boxShadow: '0 2px 6px rgba(15, 23, 42, 0.05)'
+        marginBottom: '12px',
+        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0', paddingBottom: '8px', marginBottom: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px', marginBottom: '10px' }}>
           <div>
-            <div style={{ fontSize: '12px', fontWeight: '800', color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              🏛️ Municipal Sponge Capital Budget
+            <div style={{ fontSize: '12px', fontWeight: '800', color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+              Municipal Sponge Capital Ledger
             </div>
             <div style={{ fontSize: '10px', color: '#64748B' }}>
-              CPWD Delhi Schedule of Rates (DSR) • Dynamic Catchment Matrix
+              CPWD Schedule of Rates • Dynamic Catchment Matrix
             </div>
           </div>
-          <span style={{ fontSize: '10px', background: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0', padding: '2px 8px', borderRadius: '4px', fontWeight: '800' }}>
-            {selectedIndices.length} of {interventions.length} Sanctioned
+          <span style={{ fontSize: '10px', background: '#F1F5F9', color: '#0F172A', border: '1px solid #E2E8F0', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+            {selectedIndices.length} of {interventions.length} Selected
           </span>
         </div>
 
         {/* 4-Stat Financial Ledger */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', textAlign: 'center' }}>
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 4px' }}>
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '8px 4px' }}>
             <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Runoff Cut</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: '#059669', marginTop: '2px' }}>
+            <div style={{ fontSize: '14px', fontWeight: '900', color: '#059669', marginTop: '2px' }}>
               -{totalReductionPct}%
             </div>
           </div>
 
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '8px 4px' }}>
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '8px 4px' }}>
             <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>CAPEX Outlay</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: '#0F172A', marginTop: '2px' }}>
+            <div style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', marginTop: '2px' }}>
               ₹{totalCostCr} Cr
             </div>
           </div>
 
-          <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '8px', padding: '8px 4px' }}>
-            <div style={{ fontSize: '9px', color: '#0369A1', fontWeight: '700', textTransform: 'uppercase' }}>Loss Averted</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: '#0284C7', marginTop: '2px' }}>
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '8px 4px' }}>
+            <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Loss Averted</div>
+            <div style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', marginTop: '2px' }}>
               ₹{damagePreventedCr} Cr
             </div>
           </div>
 
-          <div style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: '8px', padding: '8px 4px' }}>
-            <div style={{ fontSize: '9px', color: '#047857', fontWeight: '700', textTransform: 'uppercase' }}>Net Benefit</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: '#059669', marginTop: '2px' }}>
+          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '8px 4px' }}>
+            <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Net Benefit</div>
+            <div style={{ fontSize: '14px', fontWeight: '900', color: '#059669', marginTop: '2px' }}>
               +{netRoiPct}%
             </div>
           </div>
@@ -373,8 +374,8 @@ const InterventionsSection = ({ interventions, loading, simulationData, onMitiga
 
         {/* Storage and Population Sub-row */}
         <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #F1F5F9', fontSize: '10.5px', color: '#475569', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>🌊 <strong>{totalStorageM3.toLocaleString()} m³</strong> detention storage</span>
-          <span>👥 <strong>{peopleProtected.toLocaleString()}</strong> citizens protected</span>
+          <span><strong>{totalStorageM3.toLocaleString()} m³</strong> detention storage</span>
+          <span><strong>{peopleProtected.toLocaleString()}</strong> citizens protected</span>
         </div>
       </div>
 
@@ -386,19 +387,19 @@ const InterventionsSection = ({ interventions, loading, simulationData, onMitiga
         <div style={{ display: 'flex', gap: '4px' }}>
           <button
             onClick={() => handleSelectPreset('all')}
-            style={{ background: '#F1F5F9', border: '1px solid #CBD5E1', padding: '2px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: '700', cursor: 'pointer', color: '#1E3A8A' }}
+            style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '4px', fontSize: '9.5px', fontWeight: '700', cursor: 'pointer', color: '#0F172A' }}
           >
-            All 5
+            All Packages
           </button>
           <button
             onClick={() => handleSelectPreset('priority')}
-            style={{ background: '#ECFDF5', border: '1px solid #A7F3D0', padding: '2px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: '700', cursor: 'pointer', color: '#047857' }}
+            style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '4px', fontSize: '9.5px', fontWeight: '700', cursor: 'pointer', color: '#0F172A' }}
           >
-            AMRUT 2.0
+            AMRUT 2.0 Priority
           </button>
           <button
             onClick={() => handleSelectPreset('clear')}
-            style={{ background: '#FEF2F2', border: '1px solid #FECACA', padding: '2px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: '700', cursor: 'pointer', color: '#DC2626' }}
+            style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '4px', fontSize: '9.5px', fontWeight: '700', cursor: 'pointer', color: '#64748B' }}
           >
             Reset
           </button>

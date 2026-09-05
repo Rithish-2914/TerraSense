@@ -8,7 +8,7 @@ const INITIAL_CALL_RECORDS = [
     phone: '+91 98402 11928',
     ward: 'Palakkarai Main Bazaar (Ward 14)',
     timestamp: '16:48 PM (2 mins ago)',
-    severity: 'critical', // 'critical', 'high', 'medium', 'resolved'
+    severity: 'critical',
     waterDepth: '1.25m (Waist-deep water)',
     reliefNeed: 'Inflatable Rescue Boat + Paramedic for 78yo bedridden mother',
     transcript: 'Water has entered ground floor living room up to 4 feet near temple street. Electricity is disconnected. Elderly mother cannot walk. Please send rescue team immediately.',
@@ -93,7 +93,7 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
 
       if (onShowToast) {
         onShowToast({
-          message: `🚨 New Emergency Call Logged: ${newCall.id}\nCaller: ${newCall.callerName} (${newCall.ward})\nNeed: ${newCall.reliefNeed}`,
+          message: `New Distress Call Logged: ${newCall.id}\nCaller: ${newCall.callerName} (${newCall.ward})\nNeed: ${newCall.reliefNeed}`,
           type: 'error'
         });
       }
@@ -130,14 +130,14 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
       
       if (onShowToast) {
         onShowToast({
-          message: `🚤 Dispatched ${unitName} to ${call.id}\n📱 Twilio Alert: ${result.mode === 'live_carrier_sent' ? 'Live Cellular SMS Sent!' : 'Simulator SMS Dispatched'} (${result.message_sid?.slice(0, 10)}...)`,
+          message: `Dispatched ${unitName} to ${call.id}\nTwilio Alert: ${result.mode === 'live_carrier_sent' ? 'Live Cellular SMS Sent!' : 'Simulator SMS Dispatched'} (${result.message_sid?.slice(0, 10)}...)`,
           type: 'success'
         });
       }
     } catch (e) {
       if (onShowToast) {
         onShowToast({
-          message: `🚤 Dispatched ${unitName} to ${call.id}`,
+          message: `Dispatched ${unitName} to ${call.id}`,
           type: 'success'
         });
       }
@@ -159,14 +159,14 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
       const res = await resp.json();
       if (onShowToast) {
         onShowToast({
-          message: `📞 Twilio Automated Voice Call Placed!\nTo: ${call.phone}\nMode: ${res.mode === 'live_voice_call_initiated' ? 'Live Carrier Call In Progress' : 'Simulator Audio Alert Synthesized'}`,
+          message: `Twilio Automated Voice Call Placed!\nTo: ${call.phone}\nMode: ${res.mode === 'live_voice_call_initiated' ? 'Live Carrier Call In Progress' : 'Simulator Voice Call Synthesized'}`,
           type: 'success'
         });
       }
     } catch (err) {
       if (onShowToast) {
         onShowToast({
-          message: `📞 Automated Voice Broadcast initiated for ${call.phone}`,
+          message: `Automated Voice Broadcast initiated for ${call.phone}`,
           type: 'success'
         });
       }
@@ -188,7 +188,7 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
 
     if (onShowToast) {
       onShowToast({
-        message: `✅ Call #${callId} marked as Safely Evacuated & Resolved`,
+        message: `Call #${callId} marked as Safely Evacuated & Resolved`,
         type: 'success'
       });
     }
@@ -228,16 +228,11 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
         
         {/* Government Header */}
         <div className="hotline-header">
-          <div className="hotline-header-left">
-            <div className="emblem-badge">
-              <span>🏛️</span>
-            </div>
-            <div>
-              <h2>Municipal Disaster Control Room & Citizen Helpline</h2>
-              <p className="hotline-sub">
-                District Emergency Operation Center (DEOC) • Helpline: <strong>1077 / 1070 / 0431-2401000</strong>
-              </p>
-            </div>
+          <div>
+            <h2>District Emergency Operations Center (DEOC 1077)</h2>
+            <p className="hotline-sub">
+              Citizen Helpline & Tactical Disaster Dispatch Console • <strong>1077 / 1070 / 0431-2401000</strong>
+            </p>
           </div>
           <div className="hotline-header-right">
             <button 
@@ -245,7 +240,7 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
               onClick={handleSimulateCall}
               disabled={isLoggingCall}
             >
-              {isLoggingCall ? '⏳ Logging Call...' : '📞 Log Incoming Distress Call'}
+              {isLoggingCall ? 'Logging Call...' : '+ Log Distress Call'}
             </button>
             <button className="hotline-close-btn" onClick={onClose} title="Close">✕</button>
           </div>
@@ -253,25 +248,25 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
 
         {/* Status Counters */}
         <div className="hotline-counters">
-          <div className="counter-card red">
-            <span className="counter-title">CRITICAL RESCUES PENDING</span>
-            <span className="counter-num">{criticalCount}</span>
-            <span className="counter-desc">Water level &gt; 1.0 meter</span>
+          <div className="counter-card">
+            <span className="counter-title">Critical Rescues</span>
+            <span className="counter-num" style={{ color: '#DC2626' }}>{criticalCount}</span>
+            <span className="counter-desc">Water depth &gt; 1.0m</span>
           </div>
-          <div className="counter-card orange">
-            <span className="counter-title">HIGH PRIORITY RELIEF</span>
-            <span className="counter-num">{highCount}</span>
-            <span className="counter-desc">Medical / Food / Infants</span>
+          <div className="counter-card">
+            <span className="counter-title">High Priority Relief</span>
+            <span className="counter-num" style={{ color: '#D97706' }}>{highCount}</span>
+            <span className="counter-desc">Medical / Supplies / Infants</span>
           </div>
-          <div className="counter-card green">
-            <span className="counter-title">SAFELY EVACUATED</span>
-            <span className="counter-num">{resolvedCount}</span>
-            <span className="counter-desc">Relocated to High-Ground Shelters</span>
+          <div className="counter-card">
+            <span className="counter-title">Safely Evacuated</span>
+            <span className="counter-num" style={{ color: '#059669' }}>{resolvedCount}</span>
+            <span className="counter-desc">Relocated to High Ground</span>
           </div>
-          <div className="counter-card blue">
-            <span className="counter-title">TOTAL CALLS LOGGED</span>
-            <span className="counter-num">{calls.length}</span>
-            <span className="counter-desc">Active Ward Operations</span>
+          <div className="counter-card">
+            <span className="counter-title">Total Active Calls</span>
+            <span className="counter-num" style={{ color: '#0F172A' }}>{calls.length}</span>
+            <span className="counter-desc">Ward Operations</span>
           </div>
         </div>
 
@@ -282,32 +277,32 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
               className={`tab-btn ${filterSeverity === 'all' ? 'active' : ''}`}
               onClick={() => setFilterSeverity('all')}
             >
-              All Calls ({calls.length})
+              All ({calls.length})
             </button>
             <button 
-              className={`tab-btn red ${filterSeverity === 'critical' ? 'active' : ''}`}
+              className={`tab-btn ${filterSeverity === 'critical' ? 'active' : ''}`}
               onClick={() => setFilterSeverity('critical')}
             >
-              🔴 Critical ({criticalCount})
+              Critical ({criticalCount})
             </button>
             <button 
-              className={`tab-btn orange ${filterSeverity === 'high' ? 'active' : ''}`}
+              className={`tab-btn ${filterSeverity === 'high' ? 'active' : ''}`}
               onClick={() => setFilterSeverity('high')}
             >
-              🟠 High Priority ({highCount})
+              High Priority ({highCount})
             </button>
             <button 
-              className={`tab-btn green ${filterSeverity === 'resolved' ? 'active' : ''}`}
+              className={`tab-btn ${filterSeverity === 'resolved' ? 'active' : ''}`}
               onClick={() => setFilterSeverity('resolved')}
             >
-              🟢 Evacuated ({resolvedCount})
+              Evacuated ({resolvedCount})
             </button>
           </div>
 
           <div className="search-wrap">
             <input 
               type="text" 
-              placeholder="Search by caller, ward, phone, or request..." 
+              placeholder="Filter by caller, ward, phone, or need..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -322,21 +317,27 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
             </div>
           ) : (
             filteredCalls.map(item => (
-              <div key={item.id} className={`hotline-card severity-${item.severity}`}>
+              <div key={item.id} className="hotline-card">
                 <div className="hotline-card-header">
                   <div className="caller-col">
                     <span className="call-ref">{item.id}</span>
                     <strong className="caller-title">{item.callerName}</strong>
-                    <span className="phone-tag">📞 {item.phone}</span>
-                    <span className="time-tag">🕒 {item.timestamp}</span>
+                    <span className="phone-tag">{item.phone}</span>
+                    <span className="time-tag">{item.timestamp}</span>
                   </div>
 
                   <div className="status-badges">
-                    <span className={`pill-badge ${item.severity}`}>
-                      {item.severity === 'critical' ? '🔴 Critical' : item.severity === 'high' ? '🟠 High' : item.severity === 'resolved' ? '🟢 Evacuated' : '🟡 Medium'}
+                    <span className="pill-badge" style={{
+                      color: item.severity === 'critical' ? '#DC2626' : item.severity === 'high' ? '#D97706' : item.severity === 'resolved' ? '#059669' : '#475569',
+                      background: '#F1F5F9'
+                    }}>
+                      {item.severity.toUpperCase()}
                     </span>
-                    <span className={`dispatch-pill ${item.status}`}>
-                      {item.status === 'resolved' ? '✅ Evacuated & Resolved' : item.status === 'dispatched' ? '🚤 Unit Dispatched' : '⚠️ Pending Dispatch'}
+                    <span className="dispatch-pill" style={{
+                      color: item.status === 'resolved' ? '#059669' : item.status === 'dispatched' ? '#0F172A' : '#DC2626',
+                      background: '#F8FAFC'
+                    }}>
+                      {item.status === 'resolved' ? 'Evacuated' : item.status === 'dispatched' ? 'Unit Dispatched' : 'Pending Dispatch'}
                     </span>
                   </div>
                 </div>
@@ -344,15 +345,15 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
                 <div className="hotline-card-grid">
                   <div className="grid-left">
                     <div className="row-item">
-                      <span className="row-label">Ward / Locality:</span>
+                      <span className="row-label">Ward / Location:</span>
                       <strong className="row-val">{item.ward}</strong>
                     </div>
                     <div className="row-item">
-                      <span className="row-label">Water Level:</span>
+                      <span className="row-label">Water Depth:</span>
                       <span className="row-val depth">{item.waterDepth}</span>
                     </div>
                     <div className="row-item">
-                      <span className="row-label">Required Assistance:</span>
+                      <span className="row-label">Relief Need:</span>
                       <span className="row-val need">{item.reliefNeed}</span>
                     </div>
                   </div>
@@ -360,12 +361,12 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
                   <div className="grid-right">
                     <div className="recording-box">
                       <div className="recording-top">
-                        <span className="rec-title">📞 Voice Call Audio Log ({item.audioDuration})</span>
+                        <span className="rec-title">Call Audio Log ({item.audioDuration})</span>
                         <button 
                           className={`play-rec-btn ${playingCallId === item.id ? 'playing' : ''}`}
                           onClick={() => handleToggleAudio(item.id)}
                         >
-                          {playingCallId === item.id ? '⏹️ Playing Audio...' : '▶️ Play Recording'}
+                          {playingCallId === item.id ? 'Playing Audio...' : 'Play Audio'}
                         </button>
                       </div>
                       <p className="rec-text">"{item.transcript}"</p>
@@ -375,7 +376,7 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
 
                 {item.assignedUnit && (
                   <div className="dispatched-unit-tag">
-                    <span>🛡️ Assigned Field Unit: <strong>{item.assignedUnit}</strong></span>
+                    <span>Assigned Unit: <strong>{item.assignedUnit}</strong></span>
                   </div>
                 )}
 
@@ -384,33 +385,32 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
                     {item.status !== 'resolved' && (
                       <>
                         <button 
-                          className="dispatch-action-btn boat"
+                          className="dispatch-action-btn"
                           onClick={() => handleAssignUnit(item, 'NDRF Rescue Boat Team #B-08')}
                           title="Dispatch rescue boat and trigger cellular Twilio SMS alert"
                         >
-                          🚤 Dispatch NDRF Boat
+                          Dispatch NDRF Boat
                         </button>
                         <button 
-                          className="dispatch-action-btn bus"
+                          className="dispatch-action-btn"
                           onClick={() => handleAssignUnit(item, 'Relief Evacuation Bus #TR-04')}
                           title="Dispatch transit bus and send SMS confirmation"
                         >
-                          🏫 Evacuation Bus
+                          Evacuation Transit
                         </button>
                         <button 
-                          className="dispatch-action-btn supply"
-                          onClick={() => handleAssignUnit(item, 'Municipal Food & Drinking Water Team')}
+                          className="dispatch-action-btn"
+                          onClick={() => handleAssignUnit(item, 'Municipal Ration & Water Unit')}
                           title="Send emergency drinking water supply"
                         >
-                          📦 Send Ration & Water
+                          Send Ration & Water
                         </button>
                         <button 
-                          className="dispatch-action-btn voice"
+                          className="dispatch-action-btn primary"
                           onClick={() => handleTriggerTwilioVoiceCall(item)}
-                          style={{ background: '#1E3A8A', color: '#FFFFFF' }}
                           title="Trigger automated Twilio TTS voice alert call to citizen"
                         >
-                          📞 Call Citizen (Twilio Voice)
+                          Call Citizen (Twilio Voice)
                         </button>
                       </>
                     )}
@@ -422,10 +422,10 @@ const EmergencyHotlineModal = ({ isOpen, onClose, onShowToast }) => {
                         className="resolve-action-btn"
                         onClick={() => handleResolveCall(item.id)}
                       >
-                        ✅ Mark Safely Evacuated
+                        Mark Safely Evacuated
                       </button>
                     ) : (
-                      <span className="evacuated-label">✓ Resident safely evacuated to relief shelter</span>
+                      <span className="evacuated-label">Resident safely evacuated to high-ground shelter</span>
                     )}
                   </div>
                 </div>

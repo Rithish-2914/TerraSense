@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 import math
 import requests
@@ -729,6 +729,20 @@ def make_emergency_call():
 
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/emergency/voice-webhook', methods=['GET', 'POST'])
+def twilio_voice_webhook():
+    greeting = os.environ.get('HELPLINE_GREETING', 'Thank you for calling the TerraSense city helpline. What is your emergency?')
+    voice = os.environ.get('HELPLINE_VOICE', 'Polly.Aditi')
+    language = os.environ.get('HELPLINE_LANGUAGE', 'en-IN')
+    
+    twiml_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+    <Say voice="{voice}" language="{language}">{greeting}</Say>
+    <Record maxLength="30" playBeep="true" />
+    <Say voice="{voice}" language="{language}">Your distress report has been logged in the District Emergency Operations Center. Field units are being notified. Stay on high ground.</Say>
+</Response>"""
+    return Response(twiml_xml, mimetype='application/xml')
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
