@@ -543,144 +543,118 @@ function App() {
 
   return (
     <div className="app">
-      {/* System Status Bar */}
+      {/* Top Command Bar (Gov-Tech Status HUD) */}
       <div style={{
         position: 'absolute', 
-        top: 20, 
-        right: 20, 
-        zIndex: 1000, 
+        top: 16, 
+        left: 60, 
+        zIndex: 999, 
         background: 'rgba(255, 255, 255, 0.96)',
-        border: '1px solid rgba(7, 23, 63, 0.1)',
-        boxShadow: '0 8px 24px rgba(7, 23, 63, 0.12)',
-        padding: '16px 20px', 
-        borderRadius: '16px', 
-        fontSize: '13px',
+        border: '1px solid #CBD5E1',
+        boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+        padding: '12px 18px', 
+        borderRadius: '12px', 
+        fontSize: '12px',
         fontWeight: '700',
-        minWidth: '300px',
-        fontFamily: "'Fira Sans', sans-serif"
+        minWidth: '280px',
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
       }}>
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          marginBottom: '8px'
+          justifyContent: 'space-between',
+          marginBottom: '6px'
         }}>
-          <img 
-            src="/nasa-logo.svg" 
-            alt="WEHACK 2026" 
-            style={{
-              height: '32px', 
-              width: 'auto',
-              marginRight: '12px', 
-              flexShrink: 0
-            }}
-            onError={(e) => {
-              e.target.style.display = 'none';
-              e.target.nextSibling.style.display = 'inline-block';
-            }}
-          />
-          <div style={{
-            display: 'none',
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            background: '#FC3D21',
-            marginRight: '12px',
-            flexShrink: 0,
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '8px',
-            fontWeight: 'bold'
-          }}>
-            NASA
-          </div>
-          <div style={{
-            background: 'linear-gradient(90deg, #07173F 0%, #0042A6 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            fontSize: '14px',
-            fontWeight: '900',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            lineHeight: '1.2'
-          }}>
-            TERRASENSE • AI DIGITAL TWIN
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <img 
+              src="/nasa-logo.svg" 
+              alt="NASA" 
+              style={{
+                height: '24px', 
+                width: 'auto',
+                flexShrink: 0
+              }}
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+            <div>
+              <div style={{
+                color: '#0F172A',
+                fontSize: '13px',
+                fontWeight: '900',
+                textTransform: 'uppercase',
+                letterSpacing: '0.4px',
+                lineHeight: '1.2'
+              }}>
+                TERRASENSE DIGITAL TWIN
+              </div>
+              <div style={{
+                fontSize: '9.5px', 
+                color: '#64748B',
+                fontWeight: '700',
+                textTransform: 'uppercase',
+                letterSpacing: '0.3px'
+              }}>
+                Smart Cities GIS • Urban Hydro-Spatial Twin
+              </div>
+            </div>
           </div>
         </div>
-        <div style={{
-          fontSize: '10px', 
-          color: '#D4AF00',
-          fontWeight: '700',
-          textTransform: 'uppercase',
-          letterSpacing: '0.3px',
-          marginBottom: '8px',
-          paddingLeft: '44px',
-          textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-        }}>
-          WEHACK 2026
-        </div>
+
         <div style={{
           fontSize: '11px', 
-          color: '#07173F',
-          fontFamily: "'Overpass', sans-serif",
+          color: '#334155',
           fontWeight: '600',
-          paddingLeft: '44px'
-        }}>
-          <div style={{marginBottom: '3px'}}>
-            <span style={{
-              display: 'inline-block',
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: backendStatus === 'connected' ? '#27AE60' : '#E43700',
-              marginRight: '6px'
-            }}></span>
-            Backend: {backendStatus === 'connected' ? 'Online' : 
-                      backendStatus === 'checking' ? 'Checking...' : 'Offline'}
-          </div>
-          <div style={{marginBottom: '3px'}}>
-            <span style={{
-              display: 'inline-block',
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: earthEngineStatus === 'connected' ? '#27AE60' : '#E43700',
-              marginRight: '6px'
-            }}></span>
-            Earth Engine: {earthEngineStatus === 'connected' ? 'Authenticated' : 
-                          earthEngineStatus === 'needs_auth' ? 'Calibrated Baseline' : 'Unknown'}
-          </div>
-        </div>
-        <div style={{
-          fontSize: '10px', 
-          marginTop: '6px', 
-          color: '#2E96F5',
-          fontFamily: "'Overpass', sans-serif",
-          fontWeight: '600',
-          paddingLeft: '44px',
           display: 'flex',
+          alignItems: 'center',
           justifyContent: 'space-between',
-          alignItems: 'center'
+          borderTop: '1px solid #F1F5F9',
+          paddingTop: '6px',
+          marginTop: '6px'
         }}>
-          <span>Area: {uploadedFileName.replace('.geojson', '').replace('_area', '')}</span>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <span>
+              <span style={{
+                display: 'inline-block',
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: backendStatus === 'connected' ? '#059669' : '#DC2626',
+                marginRight: '5px'
+              }}></span>
+              Backend: {backendStatus === 'connected' ? 'Online' : 'Offline'}
+            </span>
+            <span>
+              <span style={{
+                display: 'inline-block',
+                width: '7px',
+                height: '7px',
+                borderRadius: '50%',
+                backgroundColor: earthEngineStatus === 'connected' ? '#059669' : '#0284C7',
+                marginRight: '5px'
+              }}></span>
+              Satellite: {earthEngineStatus === 'connected' ? 'GEE Live' : 'Calibrated'}
+            </span>
+          </div>
+
           <button
             onClick={() => setIsEmergencyHotlineOpen(true)}
             style={{
               background: '#DC2626',
               color: '#FFFFFF',
               border: 'none',
-              padding: '4px 10px',
-              borderRadius: '6px',
-              fontSize: '10.5px',
-              fontWeight: '700',
+              padding: '3px 8px',
+              borderRadius: '5px',
+              fontSize: '10px',
+              fontWeight: '800',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '4px'
+              gap: '3px'
             }}
           >
-            <span>🚨 Emergency Helpline</span>
+            <span>🚨 DEOC 1077</span>
           </button>
         </div>
       </div>
@@ -699,30 +673,28 @@ function App() {
         <IntroPopup onComplete={handleIntroComplete} />
       )}
 
-      {panelVisible && (
-        <FloatingPanel 
-          scenario={scenario}
-          onScenarioChange={handleScenarioChange}
-          simulationData={activeSimulationData}
-          loading={loading}
-          simulationStep={simulationStep}
-          onRunSimulation={handleRunSimulation}
-          onLoadPlan={handleLoadPlan}
-          uploadedFileName={uploadedFileName}
-          backendStatus={backendStatus}
-          earthEngineStatus={earthEngineStatus}
-          isVisible={panelVisible}
-          onToggle={handlePanelToggle}
-          onMinimize={handlePanelMinimize}
-          onMitigationChange={handleMitigationChange}
-          planData={currentPlan}
-          stormIntensity={stormIntensity}
-          onStormIntensityChange={handleStormIntensityChange}
-          onOpenBenchmark={() => setIsBenchmarkOpen(true)}
-          onOpenHotline={() => setIsEmergencyHotlineOpen(true)}
-          mitigationReductionPct={mitigationReductionPct}
-        />
-      )}
+      <FloatingPanel 
+        scenario={scenario}
+        onScenarioChange={handleScenarioChange}
+        simulationData={activeSimulationData}
+        loading={loading}
+        simulationStep={simulationStep}
+        onRunSimulation={handleRunSimulation}
+        onLoadPlan={handleLoadPlan}
+        uploadedFileName={uploadedFileName}
+        backendStatus={backendStatus}
+        earthEngineStatus={earthEngineStatus}
+        isVisible={panelVisible}
+        onToggle={handlePanelToggle}
+        onMinimize={handlePanelMinimize}
+        onMitigationChange={handleMitigationChange}
+        planData={currentPlan}
+        stormIntensity={stormIntensity}
+        onStormIntensityChange={handleStormIntensityChange}
+        onOpenBenchmark={() => setIsBenchmarkOpen(true)}
+        onOpenHotline={() => setIsEmergencyHotlineOpen(true)}
+        mitigationReductionPct={mitigationReductionPct}
+      />
 
       <MultiCityBenchmarkModal 
         isOpen={isBenchmarkOpen}
@@ -736,13 +708,6 @@ function App() {
         onClose={() => setIsEmergencyHotlineOpen(false)}
         onShowToast={setToast}
       />
-
-      {(!panelVisible && !showIntroPopup) && (
-        <FloatingButton
-          onClick={handlePanelToggle}
-          simulationData={simulationData}
-        />
-      )}
 
       {toast && (
         <Toast

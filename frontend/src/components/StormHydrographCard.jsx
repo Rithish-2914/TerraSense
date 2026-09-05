@@ -72,7 +72,7 @@ const StormHydrographCard = ({ rainIntensity = 180, mitigationPct = 0 }) => {
         <div style={{ display: 'flex', gap: '8px' }}>
           <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', padding: '4px 8px', borderRadius: '6px', textAlign: 'center' }}>
             <div style={{ fontSize: '9px', color: '#991B1B', fontWeight: '700', textTransform: 'uppercase' }}>Peak Shaving</div>
-            <div style={{ fontSize: '13px', fontWeight: '900', color: '#E43700' }}>-57% Peak Flow</div>
+            <div style={{ fontSize: '13px', fontWeight: '900', color: '#DC2626' }}>-57% Peak Flow</div>
           </div>
           <div style={{ background: '#ECFDF5', border: '1px solid #6EE7B7', padding: '4px 8px', borderRadius: '6px', textAlign: 'center' }}>
             <div style={{ fontSize: '9px', color: '#065F46', fontWeight: '700', textTransform: 'uppercase' }}>Flood Crest Delay</div>
@@ -111,7 +111,7 @@ const StormHydrographCard = ({ rainIntensity = 180, mitigationPct = 0 }) => {
                 y={padding - 10}
                 width={8}
                 height={barHeight}
-                fill="rgba(46, 150, 245, 0.35)"
+                fill="rgba(2, 132, 199, 0.35)"
                 rx="2"
               />
             );
@@ -120,24 +120,24 @@ const StormHydrographCard = ({ rainIntensity = 180, mitigationPct = 0 }) => {
           {/* Unmitigated Inflow Curve (Red Area & Stroke) */}
           <path
             d={`${inflowPath} L ${getX(24)} ${chartHeight - padding} L ${getX(1)} ${chartHeight - padding} Z`}
-            fill="rgba(228, 55, 0, 0.12)"
+            fill="rgba(220, 38, 38, 0.12)"
           />
           <path
             d={inflowPath}
             fill="none"
-            stroke="#E43700"
+            stroke="#DC2626"
             strokeWidth="2.5"
           />
 
           {/* Mitigated Outflow Curve (Green Area & Stroke) */}
           <path
             d={`${outflowPath} L ${getX(24)} ${chartHeight - padding} L ${getX(1)} ${chartHeight - padding} Z`}
-            fill="rgba(39, 174, 96, 0.18)"
+            fill="rgba(5, 150, 105, 0.18)"
           />
           <path
             d={outflowPath}
             fill="none"
-            stroke="#27AE60"
+            stroke="#059669"
             strokeWidth="2.5"
             strokeDasharray="4,2"
           />
@@ -162,8 +162,8 @@ const StormHydrographCard = ({ rainIntensity = 180, mitigationPct = 0 }) => {
                     stroke="#64748B"
                     strokeDasharray="2,2"
                   />
-                  <circle cx={getX(d.hour)} cy={getY(d.inflowQ)} r="4" fill="#E43700" stroke="#FFFFFF" strokeWidth="2" />
-                  <circle cx={getX(d.hour)} cy={getY(d.outflowQ)} r="4" fill="#27AE60" stroke="#FFFFFF" strokeWidth="2" />
+                  <circle cx={getX(d.hour)} cy={getY(d.inflowQ)} r="4" fill="#DC2626" stroke="#FFFFFF" strokeWidth="2" />
+                  <circle cx={getX(d.hour)} cy={getY(d.outflowQ)} r="4" fill="#059669" stroke="#FFFFFF" strokeWidth="2" />
                 </>
               )}
             </g>
@@ -183,7 +183,7 @@ const StormHydrographCard = ({ rainIntensity = 180, mitigationPct = 0 }) => {
             position: 'absolute',
             top: '8px',
             right: '12px',
-            background: 'rgba(7, 23, 63, 0.92)',
+            background: 'rgba(15, 23, 42, 0.94)',
             color: '#FFFFFF',
             padding: '6px 12px',
             borderRadius: '8px',
@@ -192,8 +192,8 @@ const StormHydrographCard = ({ rainIntensity = 180, mitigationPct = 0 }) => {
             pointerEvents: 'none'
           }}>
             <div><strong>Time: {activePoint.hour}:00 Hrs</strong></div>
-            <div style={{ color: '#00E5FF' }}>🌧️ Rain: {activePoint.rainMmH} mm/h</div>
-            <div style={{ color: '#FF6B6B' }}>🔴 Unmitigated Flow: {activePoint.inflowQ} m³/s</div>
+            <div style={{ color: '#38BDF8' }}>🌧️ Rain: {activePoint.rainMmH} mm/h</div>
+            <div style={{ color: '#F87171' }}>🔴 Unmitigated Flow: {activePoint.inflowQ} m³/s</div>
             <div style={{ color: '#4ADE80' }}>🟢 Mitigated Flow: {activePoint.outflowQ} m³/s</div>
           </div>
         )}
@@ -212,20 +212,20 @@ const StormHydrographCard = ({ rainIntensity = 180, mitigationPct = 0 }) => {
       }}>
         <div style={{ display: 'flex', gap: '14px' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '10px', height: '10px', background: 'rgba(46, 150, 245, 0.5)', borderRadius: '2px' }}></span>
+            <span style={{ width: '10px', height: '10px', background: 'rgba(2, 132, 199, 0.5)', borderRadius: '2px' }}></span>
             Rainfall Hyetograph
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '10px', height: '3px', background: '#E43700' }}></span>
+            <span style={{ width: '10px', height: '3px', background: '#DC2626' }}></span>
             Unmitigated Surge (Q-Inflow)
           </span>
           <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '10px', height: '3px', background: '#27AE60', borderTop: '1px dashed #27AE60' }}></span>
+            <span style={{ width: '10px', height: '3px', background: '#059669', borderTop: '1px dashed #059669' }}></span>
             Mitigated Retention (Q-Outflow)
           </span>
         </div>
 
-        <span style={{ color: '#0042A6', fontWeight: '700' }}>
+        <span style={{ color: '#1E3A8A', fontWeight: '700' }}>
           🛡️ Retention Basin buffers 45,000 m³ floodwater
         </span>
       </div>

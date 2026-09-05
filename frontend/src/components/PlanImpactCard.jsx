@@ -87,9 +87,9 @@ const PlanImpactCard = ({ simulationData, scenario, loading }) => {
               marginTop: '6px',
               fontSize: '13px',
               fontWeight: 'bold',
-              color: !impact.hasComparison ? '#666' :
-                     Math.abs(impact.change) > 15 ? '#E43700' : 
-                     Math.abs(impact.change) > 5 ? '#EAFE07' : '#2E96F5'
+              color: !impact.hasComparison ? '#64748B' :
+                     Math.abs(impact.change) > 15 ? '#DC2626' : 
+                     Math.abs(impact.change) > 5 ? '#D97706' : '#0284C7'
             }}>
               {loading ? 'Calculating...' : 
                 !impact.hasComparison ? 

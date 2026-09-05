@@ -12,13 +12,13 @@ const EnvironmentalCard = ({ metrics, loading }) => {
   let imperviousLevel, imperviousColor;
   if (imperviousFraction < 0.3) {
     imperviousLevel = 'Low Urbanization';
-    imperviousColor = '#2E96F5'; // NASA Blue
+    imperviousColor = '#0284C7';
   } else if (imperviousFraction < 0.6) {
     imperviousLevel = 'Medium Urbanization';
-    imperviousColor = '#EAFE07'; // NASA Yellow
+    imperviousColor = '#D97706';
   } else {
     imperviousLevel = 'High Urbanization';
-    imperviousColor = '#E43700'; // NASA Red
+    imperviousColor = '#DC2626';
   }
 
   return (

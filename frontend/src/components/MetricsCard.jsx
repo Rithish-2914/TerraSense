@@ -9,22 +9,22 @@ const MetricsCard = ({ metrics, scenario, loading }) => {
   
   if (runoffIncrease <= 10) {
     riskLevel = 'Low';
-    riskColor = '#2E96F5'; // NASA Blue
+    riskColor = '#0284C7'; // Blue
   } else if (runoffIncrease <= 30) {
     riskLevel = 'Medium';
-    riskColor = '#EAFE07'; // NASA Yellow
+    riskColor = '#D97706'; // Amber
   } else {
     riskLevel = 'High';
-    riskColor = '#E43700'; // NASA Red
+    riskColor = '#DC2626'; // Crimson Red
   }
 
   // Heat stress color coding
   const getHeatStressColor = (level) => {
     switch(level) {
-      case 'Low': return '#2E96F5';
-      case 'Medium': return '#EAFE07'; 
-      case 'High': return '#E43700';
-      default: return '#999';
+      case 'Low': return '#0284C7';
+      case 'Medium': return '#D97706'; 
+      case 'High': return '#DC2626';
+      default: return '#64748B';
     }
   };
 
