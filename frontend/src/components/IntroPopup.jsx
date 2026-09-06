@@ -9,25 +9,25 @@ const IntroPopup = ({ onComplete }) => {
       title: "TerraSense",
       subtitle: "Climate-Adaptive Urban Digital Twin",
       content: "Real NASA Earth Engine satellite data meets local AI for evidence-based urban planning.",
-      icon: "🛰️"
+      icon: ""
     },
     {
       title: "Live Satellite Analysis",
       subtitle: "Six NASA Earth Datasets Integrated",
       content: "Temperature • Precipitation • Elevation • Soil Moisture • Population Density • Nighttime Lights",
-      icon: "🌍"
+      icon: ""
     },
     {
       title: "AI-Powered Interventions",
       subtitle: "Local LLM Municipal Recommendations",
       content: "Context-aware civil engineering interventions with realistic INR (₹) budgets and implementation timelines.",
-      icon: "🤖"
+      icon: ""
     },
     {
       title: "Ready to Explore?",
       subtitle: "Start your climate simulation",
       content: "Upload your area boundary or test our pre-configured Indian cities (Trichy, Mumbai, Bangalore, Delhi).",
-      icon: "🚀"
+      icon: ""
     }
   ];
 
@@ -48,8 +48,7 @@ const IntroPopup = ({ onComplete }) => {
       <div className="intro-popup">
         <div className="intro-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <img src="/nasa-logo.svg" alt="Earth Engine" className="intro-logo" />
-            <span style={{ fontWeight: '800', color: '#0042A6', letterSpacing: '0.5px' }}>TERRASENSE</span>
+            <span style={{ fontWeight: '700', color: 'var(--accent)', letterSpacing: '0.5px' }}>TERRASENSE</span>
           </div>
           <button className="intro-skip" onClick={skipIntro} title="Skip to main app">×</button>
         </div>
@@ -90,7 +89,7 @@ const IntroPopup = ({ onComplete }) => {
               </button>
             )}
             <button className="intro-next" onClick={nextSlide}>
-              {currentSlide < slides.length - 1 ? 'Next →' : 'Launch TerraSense 🚀'}
+              {currentSlide < slides.length - 1 ? 'Next →' : 'Launch TerraSense'}
             </button>
           </div>
         </div>

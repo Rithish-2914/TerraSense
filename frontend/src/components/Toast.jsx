@@ -99,7 +99,7 @@ const Toast = ({ message, type, onClose }) => {
             fontSize: '14px',
             fontFamily: 'Overpass, sans-serif',
             fontWeight: '600',
-            color: '#07173F',
+            color: 'var(--text)',
             lineHeight: '1.4',
             whiteSpace: 'pre-line'
           }}>
@@ -115,7 +115,7 @@ const Toast = ({ message, type, onClose }) => {
             width: '24px',
             height: '24px',
             cursor: 'pointer',
-            color: '#07173F',
+            color: 'var(--text)',
             fontSize: '16px',
             display: 'flex',
             alignItems: 'center',
@@ -125,11 +125,11 @@ const Toast = ({ message, type, onClose }) => {
           }}
           onMouseEnter={(e) => {
             e.target.style.background = 'rgba(228, 55, 0, 0.1)';
-            e.target.style.color = '#E43700';
+            e.target.style.color = 'var(--danger)';
           }}
           onMouseLeave={(e) => {
             e.target.style.background = 'rgba(7, 23, 63, 0.06)';
-            e.target.style.color = '#07173F';
+            e.target.style.color = 'var(--text)';
           }}
         >
           ×

@@ -5,7 +5,6 @@ const FloatingButton = ({ onClick, simulationData }) => {
   return (
     <button className="floating-button" onClick={onClick} title="Open TerraSense Panel">
       <div className="floating-button-content">
-        <img src="/nasa-logo.svg" alt="TerraSense" className="floating-button-logo" />
         <div className="floating-button-text">
           <span className="floating-button-title">TerraSense</span>
           {simulationData && (

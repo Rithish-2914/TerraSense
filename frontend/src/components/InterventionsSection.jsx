@@ -1,243 +1,125 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from "react";
+import BillOfQuantitiesModal from "./BillOfQuantitiesModal";
+import { readIntervention, formatCrore } from "../utils/interventions";
 
-const getInterventionCostLakhs = (item, areaHa = 100, stormIntensity = 180) => {
-  if (item.estimated_cost_inr_lakhs && typeof item.estimated_cost_inr_lakhs === 'number') {
-    return item.estimated_cost_inr_lakhs;
-  }
-  if (item.cost_estimate_inr_lakhs && typeof item.cost_estimate_inr_lakhs === 'number') {
-    return item.cost_estimate_inr_lakhs;
-  }
-  if (item.cost_bracket) {
-    const match = String(item.cost_bracket).match(/₹?(\d+(\.\d+)?)/);
-    if (match) {
-      const val = parseFloat(match[1]);
-      return String(item.cost_bracket).includes('Cr') ? val * 100 : val;
-    }
-  }
-  const factor = (areaHa / 100.0) * (0.85 + (stormIntensity / 180.0) * 0.15);
-  return Math.round(75.0 * factor * 10) / 10;
-};
-
-const BoQModal = ({ intervention, areaHa, isOpen, onClose }) => {
-  if (!isOpen || !intervention) return null;
-
-  const costLakhs = intervention.estimated_cost_inr_lakhs || intervention.cost_estimate_inr_lakhs || 85.0;
-  const cpwdItems = intervention.cpwd_items || [
-    { code: "DSR 2.8.1", item: "Earthwork excavation in all kinds of soil for sponge trenches", qty: `${Math.round(areaHa * 140)} m³`, rate: "₹340/m³", amt: `₹${(costLakhs * 0.35).toFixed(1)}L` },
-    { code: "DSR 16.68", item: "Graded stone aggregate sub-base & non-woven geotextile membrane", qty: `${Math.round(areaHa * 110)} m²`, rate: "₹480/m²", amt: `₹${(costLakhs * 0.38).toFixed(1)}L` },
-    { code: "DSR 22.12", item: "Native Vetiver grass bio-retention turfing & hydroseeding", qty: `${Math.round(areaHa * 110)} m²`, rate: "₹280/m²", amt: `₹${(costLakhs * 0.27).toFixed(1)}L` }
-  ];
+const InterventionCard = ({
+  intervention,
+  index,
+  isSelected,
+  onToggle,
+  areaHa,
+  stormIntensity,
+  onOpenBoQ,
+}) => {
+  const v = readIntervention(intervention, index, areaHa, stormIntensity);
+  const costFormatted = formatCrore(v.costLakhs);
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(15, 23, 42, 0.7)',
-      backdropFilter: 'blur(6px)',
-      zIndex: 10000,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }} onClick={onClose}>
-      <div style={{
-        background: '#FFFFFF',
-        borderRadius: '12px',
-        maxWidth: '680px',
-        width: '100%',
-        maxHeight: '85vh',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 20px 40px rgba(15, 23, 42, 0.25)',
-        border: '1px solid #CBD5E1',
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
-      }} onClick={e => e.stopPropagation()}>
-        <div style={{
-          background: '#0F172A',
-          color: '#FFFFFF',
-          padding: '16px 20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: '1px solid #1E293B'
-        }}>
-          <div>
-            <div style={{ fontSize: '10px', color: '#94A3B8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              CPWD DSR 2024-25 • Bill of Quantities (BoQ)
-            </div>
-            <h3 style={{ margin: '3px 0 0 0', fontSize: '15px', color: '#FFFFFF', fontWeight: '800' }}>
-              {intervention.title || intervention.name}
-            </h3>
-          </div>
-          <button onClick={onClose} style={{
-            background: 'rgba(255,255,255,0.08)',
-            border: 'none',
-            color: '#FFFFFF',
-            width: '28px',
-            height: '28px',
-            borderRadius: '6px',
-            fontSize: '13px',
-            cursor: 'pointer'
-          }}>✕</button>
-        </div>
-
-        <div style={{ padding: '18px 20px', overflowY: 'auto', background: '#F8FAFC' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
-            <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700' }}>TENDER SCHEME</div>
-              <div style={{ fontWeight: '800', fontSize: '12px', color: '#0F172A' }}>{intervention.tender_code || 'AMRUT-2.0/SPONGE/01'}</div>
-            </div>
-            <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700' }}>SANCTIONED COST</div>
-              <div style={{ fontWeight: '800', fontSize: '13px', color: '#0F172A' }}>
-                {costLakhs >= 100 ? `₹${(costLakhs/100).toFixed(2)} Cr` : `₹${costLakhs.toFixed(1)} Lakhs`}
-              </div>
-            </div>
-            <div style={{ background: '#FFFFFF', padding: '8px 10px', borderRadius: '6px', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700' }}>STORAGE ABATED</div>
-              <div style={{ fontWeight: '800', fontSize: '12px', color: '#0F172A' }}>
-                {(intervention.storage_capacity_m3 || Math.round(areaHa * 180)).toLocaleString()} m³
-              </div>
-            </div>
-          </div>
-
-          <div style={{ fontSize: '11px', fontWeight: '700', color: '#334155', textTransform: 'uppercase', marginBottom: '6px' }}>
-            Itemized Schedule of Works (CPWD Delhi Schedule of Rates)
-          </div>
-
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', background: '#FFFFFF', borderRadius: '6px', overflow: 'hidden', border: '1px solid #E2E8F0', marginBottom: '12px' }}>
-            <thead>
-              <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #CBD5E1', textAlign: 'left' }}>
-                <th style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '700' }}>DSR Code</th>
-                <th style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '700' }}>Description of Work</th>
-                <th style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '700' }}>Qty</th>
-                <th style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '700' }}>Schedule Rate</th>
-                <th style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '700', textAlign: 'right' }}>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cpwdItems.map((it, idx) => (
-                <tr key={idx} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                  <td style={{ padding: '8px 10px', fontWeight: '700', color: '#0F172A', fontFamily: 'monospace' }}>{it.code}</td>
-                  <td style={{ padding: '8px 10px', color: '#334155' }}>{it.item}</td>
-                  <td style={{ padding: '8px 10px', color: '#0F172A', fontWeight: '600' }}>{it.qty}</td>
-                  <td style={{ padding: '8px 10px', color: '#64748B' }}>{it.rate}</td>
-                  <td style={{ padding: '8px 10px', fontWeight: '700', color: '#0F172A', textAlign: 'right' }}>{it.amt}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '8px 12px', fontSize: '10.5px', color: '#475569' }}>
-            <strong>CPWD Statutory Compliance:</strong> Includes 18% GST, 3% Civil Quality Inspection & Contingency, and 5-Year Maintenance Warranty.
-          </div>
-        </div>
-
-        <div style={{ padding: '12px 20px', background: '#FFFFFF', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{
-            background: '#0F172A',
-            color: '#FFFFFF',
-            border: 'none',
-            padding: '7px 16px',
-            borderRadius: '6px',
-            fontSize: '11px',
-            fontWeight: '700',
-            cursor: 'pointer'
-          }}>Close Specification</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const InterventionCard = ({ intervention, index, isSelected, onToggle, areaHa, stormIntensity, onOpenBoQ }) => {
-  const costLakhs = getInterventionCostLakhs(intervention, areaHa, stormIntensity);
-  const costFormatted = costLakhs >= 100 ? `₹${(costLakhs / 100).toFixed(2)} Cr` : `₹${costLakhs.toFixed(1)} Lakhs`;
-  const storageM3 = intervention.storage_capacity_m3 || Math.round(areaHa * (index === 2 ? 550 : index === 1 ? 240 : 185));
-
-  return (
-    <div 
+    <div
+      className={`intervention-card ${isSelected ? "selected-sandbox-card" : "unselected-sandbox-card"}`}
+      onClick={() => onToggle(index)}
       style={{
-        border: isSelected ? '1px solid #0F172A' : '1px solid #E2E8F0',
-        background: '#FFFFFF',
-        borderRadius: '8px',
-        padding: '12px 14px',
-        marginBottom: '10px',
-        boxShadow: isSelected ? '0 2px 6px rgba(15, 23, 42, 0.08)' : '0 1px 2px rgba(0,0,0,0.02)',
-        transition: 'all 0.15s ease'
+        border: isSelected
+          ? "1px solid var(--accent-border)"
+          : "1px solid var(--border)",
+        background: isSelected ? "var(--surface)" : "var(--surface-sunken)",
+        boxShadow: "none",
+        cursor: "pointer",
+        transition: "all 0.25s ease",
+        position: "relative",
       }}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-        <div style={{ fontWeight: '800', fontSize: '12px', color: '#0F172A', margin: 0 }}>
-          {index + 1}. {intervention.title || intervention.name}
-        </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggle(index);
-          }}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "8px",
+        }}
+      >
+        <div
+          className="intervention-title"
           style={{
-            fontSize: '10.5px',
-            fontWeight: '700',
-            padding: '4px 10px',
-            borderRadius: '5px',
-            background: isSelected ? '#0F172A' : '#F1F5F9',
-            color: isSelected ? '#FFFFFF' : '#475569',
-            border: isSelected ? '1px solid #0F172A' : '1px solid #CBD5E1',
-            cursor: 'pointer',
-            transition: 'all 0.15s'
+            color: isSelected ? "var(--accent)" : "var(--text-secondary)",
+            margin: 0,
           }}
         >
-          {isSelected ? 'Active in Sandbox' : '+ Add to Sandbox'}
-        </button>
-      </div>
-
-      <div style={{ fontSize: '11px', color: '#475569', lineHeight: 1.4, marginBottom: '8px' }}>
-        {intervention.description}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '6px', fontSize: '10.5px', borderTop: '1px solid #F1F5F9', paddingTop: '6px' }}>
-        <div>
-          <span style={{ color: '#64748B' }}>Runoff Cut: </span>
-          <strong style={{ color: '#059669' }}>-{intervention.runoff_reduction_pct || intervention.target_runoff_reduction_pct || 18}%</strong>
+          #{index + 1}. {v.title}
         </div>
-        <div>
-          <span style={{ color: '#64748B' }}>Estimated Cost: </span>
-          <strong style={{ color: '#0F172A' }}>{costFormatted}</strong>
-        </div>
-        <div>
-          <span style={{ color: '#64748B' }}>Detention: </span>
-          <strong style={{ color: '#0F172A' }}>{storageM3.toLocaleString()} m³</strong>
-        </div>
-        <div>
-          <span style={{ color: '#64748B' }}>Timeline: </span>
-          <strong style={{ color: '#334155' }}>{intervention.implementation_months || 6} Months</strong>
+        <div
+          style={{
+            fontSize: "11px",
+            fontWeight: "700",
+            padding: "4px 10px",
+            borderRadius: "var(--r-sm)",
+            background: isSelected ? "var(--accent-quiet)" : "var(--border)",
+            color: isSelected ? "var(--accent)" : "var(--text-secondary)",
+            border: isSelected
+              ? "1px solid var(--accent-border)"
+              : "1px solid transparent",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <span>{isSelected ? "In Policy Sandbox" : "+ Click to Enable"}</span>
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px', paddingTop: '6px', borderTop: '1px solid #F1F5F9' }}>
-        <span style={{ fontSize: '9.5px', color: '#64748B', fontFamily: 'monospace' }}>
-          {intervention.tender_code || `AMRUT-2.0/PKG-0${index + 1}`}
-        </span>
+      <div
+        className="intervention-desc"
+        style={{ color: isSelected ? "var(--text)" : "var(--text-muted)" }}
+      >
+        {v.description}
+      </div>
+
+      <div className="intervention-details">
+        <div className="detail-item">
+          <span className="detail-label">Runoff Reduction:</span>
+          <span
+            className="detail-value"
+            style={{
+              color: isSelected ? "var(--ok)" : "var(--text-muted)",
+              fontWeight: "700",
+            }}
+          >
+            −{v.reductionPct}%
+          </span>
+        </div>
+        <div className="detail-item">
+          <span className="detail-label">Estimated Cost:</span>
+          <span className="detail-value">{costFormatted}</span>
+        </div>
+        <div className="detail-item">
+          <span className="detail-label">Timeline:</span>
+          <span className="detail-value">{v.months} months</span>
+        </div>
+        <div className="detail-item">
+          <span className="detail-label">KPI:</span>
+          <span className="detail-value">{v.kpi}</span>
+        </div>
+        <div className="detail-item">
+          <span className="detail-label">Retention:</span>
+          <span className="detail-value">
+            {v.storageM3.toLocaleString("en-IN")} m³
+          </span>
+        </div>
+        <div className="detail-item">
+          <span className="detail-label">Department:</span>
+          <span className="detail-value">{v.department}</span>
+        </div>
+      </div>
+
+      {/* The tender paperwork behind the card - opened without toggling it. */}
+      <div className="intervention-tender">
+        <span className="intervention-tender__code">{v.tenderCode}</span>
         <button
+          className="btn-inline"
           onClick={(e) => {
             e.stopPropagation();
-            onOpenBoQ(intervention);
+            onOpenBoQ(intervention, index, v.costLakhs);
           }}
-          style={{
-            background: '#F8FAFC',
-            color: '#0F172A',
-            border: '1px solid #CBD5E1',
-            padding: '3px 8px',
-            borderRadius: '4px',
-            fontSize: '10px',
-            fontWeight: '700',
-            cursor: 'pointer'
-          }}
+          title="Itemised CPWD Schedule of Rates bill of quantities"
         >
           View CPWD BoQ
         </button>
@@ -246,69 +128,99 @@ const InterventionCard = ({ intervention, index, isSelected, onToggle, areaHa, s
   );
 };
 
-const InterventionsSection = ({ interventions, loading, simulationData, onMitigationChange }) => {
-  const [selectedIndices, setSelectedIndices] = useState([0, 1, 2]);
-  const [activeBoQIntervention, setActiveBoQIntervention] = useState(null);
+const InterventionsSection = ({
+  interventions,
+  loading,
+  simulationData,
+  onMitigationChange,
+}) => {
+  // Nothing is sanctioned until the user sanctions it. The board opens at the
+  // unmitigated worst case so the effect of each intervention is visible as it
+  // is switched on, rather than the demo starting halfway through the answer.
+  const [selectedIndices, setSelectedIndices] = useState([]);
+  const [activeBoQ, setActiveBoQ] = useState(null);
 
   const areaHa = simulationData?.metrics?.area_ha || 100.0;
   const stormIntensity = simulationData?.metrics?.mean_rain_mm || 180.0;
 
+  // Reset or initialize when interventions change
   useEffect(() => {
     if (interventions && interventions.length > 0) {
-      setSelectedIndices([0, 1, 2]);
+      setSelectedIndices([]);
     }
   }, [interventions]);
 
   const handleToggle = (index) => {
     let updated;
     if (selectedIndices.includes(index)) {
-      updated = selectedIndices.filter(i => i !== index);
+      updated = selectedIndices.filter((i) => i !== index);
     } else {
       updated = [...selectedIndices, index];
     }
     setSelectedIndices(updated);
   };
 
-  const handleSelectPreset = (mode) => {
-    if (!interventions) return;
-    if (mode === 'all') {
-      setSelectedIndices(interventions.map((_, i) => i));
-    } else if (mode === 'priority') {
-      setSelectedIndices([0, 2]);
-    } else if (mode === 'clear') {
-      setSelectedIndices([]);
-    }
-  };
+  // --- Live sandbox economics ------------------------------------------------
+  // Read through the same normaliser the cards use, so the summary can never
+  // disagree with the item it is summing.
+  const activeReadings = (interventions || [])
+    .map((item, idx) => ({
+      idx,
+      v: readIntervention(item, idx, areaHa, stormIntensity),
+    }))
+    .filter(({ idx }) => selectedIndices.includes(idx));
 
-  const activeItems = (interventions || []).filter((_, idx) => selectedIndices.includes(idx));
-  
-  const totalReductionPct = Math.min(
-    65, 
-    activeItems.reduce((acc, item) => acc + (parseFloat(item.runoff_reduction_pct || item.target_runoff_reduction_pct) || 15), 0)
+  const totalReductionPct = Math.round(
+    Math.min(
+      65,
+      activeReadings.reduce((acc, { v }) => acc + v.reductionPct, 0),
+    ),
   );
 
-  const totalCostLakhs = activeItems.reduce((acc, item) => {
-    return acc + getInterventionCostLakhs(item, areaHa, stormIntensity);
-  }, 0);
-
-  const totalStorageM3 = activeItems.reduce((acc, item, idx) => {
-    return acc + (item.storage_capacity_m3 || Math.round(areaHa * (idx === 2 ? 550 : 200)));
-  }, 0);
-
+  const totalCostLakhs = activeReadings.reduce(
+    (acc, { v }) => acc + v.costLakhs,
+    0,
+  );
   const totalCostCr = (totalCostLakhs / 100).toFixed(2);
-  const damagePreventedCr = (parseFloat(totalCostCr) * 4.85).toFixed(2);
-  const netRoiPct = totalCostLakhs > 0 ? Math.round(((parseFloat(damagePreventedCr) - parseFloat(totalCostCr)) / parseFloat(totalCostCr)) * 100) : 0;
-  const basePeopleAtRisk = simulationData?.metrics?.scenario_people || 1500;
-  const peopleProtected = Math.round(basePeopleAtRisk * (totalReductionPct / 100));
 
-  const prevReductionRef = useRef(-1);
+  const basePeopleAtRisk = simulationData?.metrics?.scenario_people || 1500;
+  const peopleProtected = Math.round(
+    basePeopleAtRisk * (totalReductionPct / 100),
+  );
+
+  // Avoided damage was previously fixed at 5.4x the capital cost, which made
+  // the net ROI read +440% no matter which interventions were selected. It is
+  // now derived from the residents the works actually protect.
+  //
+  // ASSUMPTION, stated in the panel and open to revision: DAMAGE_PER_RESIDENT
+  // is direct loss per person per design event, and EVENTS_PER_LIFECYCLE is how
+  // many such events a 25-year asset is expected to see.
+  const DAMAGE_PER_RESIDENT_INR = 12000;
+  const EVENTS_PER_LIFECYCLE = 8;
+
+  const damagePreventedCr = (
+    (peopleProtected * DAMAGE_PER_RESIDENT_INR * EVENTS_PER_LIFECYCLE) /
+    1e7
+  ).toFixed(2);
+
+  const netRoiPct =
+    totalCostLakhs > 0
+      ? Math.round(
+          ((parseFloat(damagePreventedCr) - parseFloat(totalCostCr)) /
+            parseFloat(totalCostCr)) *
+            100,
+        )
+      : 0;
+
+  // Notify parent of mitigation level only when value changes
+  const prevReductionRef = React.useRef(-1);
   useEffect(() => {
     if (prevReductionRef.current !== totalReductionPct) {
       prevReductionRef.current = totalReductionPct;
       if (onMitigationChange) {
         onMitigationChange({
           totalReductionPct,
-          activeCount: selectedIndices.length
+          activeCount: selectedIndices.length,
         });
       }
     }
@@ -317,120 +229,320 @@ const InterventionsSection = ({ interventions, loading, simulationData, onMitiga
   if (!interventions || interventions.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: '16px' }}>
-      {/* Capital Budgeting Balance Sheet */}
-      <div style={{
-        background: '#FFFFFF',
-        border: '1px solid #E2E8F0',
-        borderRadius: '10px',
-        padding: '14px 16px',
-        marginBottom: '12px',
-        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #F1F5F9', paddingBottom: '8px', marginBottom: '10px' }}>
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: '800', color: '#0F172A', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-              Municipal Sponge Capital Ledger
-            </div>
-            <div style={{ fontSize: '10px', color: '#64748B' }}>
-              CPWD Schedule of Rates • Dynamic Catchment Matrix
-            </div>
-          </div>
-          <span style={{ fontSize: '10px', background: '#F1F5F9', color: '#0F172A', border: '1px solid #E2E8F0', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
-            {selectedIndices.length} of {interventions.length} Selected
-          </span>
-        </div>
-
-        {/* 4-Stat Financial Ledger */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', textAlign: 'center' }}>
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '8px 4px' }}>
-            <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Runoff Cut</div>
-            <div style={{ fontSize: '14px', fontWeight: '900', color: '#059669', marginTop: '2px' }}>
-              -{totalReductionPct}%
-            </div>
-          </div>
-
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '8px 4px' }}>
-            <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>CAPEX Outlay</div>
-            <div style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', marginTop: '2px' }}>
-              ₹{totalCostCr} Cr
-            </div>
-          </div>
-
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '8px 4px' }}>
-            <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Loss Averted</div>
-            <div style={{ fontSize: '14px', fontWeight: '900', color: '#0F172A', marginTop: '2px' }}>
-              ₹{damagePreventedCr} Cr
-            </div>
-          </div>
-
-          <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '6px', padding: '8px 4px' }}>
-            <div style={{ fontSize: '9px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase' }}>Net Benefit</div>
-            <div style={{ fontSize: '14px', fontWeight: '900', color: '#059669', marginTop: '2px' }}>
-              +{netRoiPct}%
-            </div>
-          </div>
-        </div>
-
-        {/* Storage and Population Sub-row */}
-        <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid #F1F5F9', fontSize: '10.5px', color: '#475569', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span><strong>{totalStorageM3.toLocaleString()} m³</strong> detention storage</span>
-          <span><strong>{peopleProtected.toLocaleString()}</strong> citizens protected</span>
-        </div>
-      </div>
-
-      {/* Preset Action Chips */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <span style={{ fontSize: '11px', fontWeight: '800', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-          Civil Engineering Packages
+    <div className="section">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "12px",
+        }}
+      >
+        <h3 style={{ margin: 0 }}>Green Infrastructure Sandbox</h3>
+        <span
+          style={{
+            fontSize: "11px",
+            color: "var(--accent)",
+            fontWeight: "700",
+          }}
+        >
+          {selectedIndices.length} of {interventions.length} Interventions
+          Active
         </span>
-        <div style={{ display: 'flex', gap: '4px' }}>
-          <button
-            onClick={() => handleSelectPreset('all')}
-            style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '4px', fontSize: '9.5px', fontWeight: '700', cursor: 'pointer', color: '#0F172A' }}
+      </div>
+
+      {/* Live Municipal ROI Summary Card */}
+      {!loading && (
+        /* A single navy panel - the one dark surface in the rail, so the
+           headline ROI numbers read as the summary of everything below. */
+        <div
+          style={{
+            background: "var(--text)",
+            border: "1px solid var(--text)",
+            borderRadius: "var(--r-md)",
+            padding: "var(--s-4)",
+            color: "#FFFFFF",
+            marginBottom: "var(--s-5)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderBottom: "1px solid rgba(255,255,255,0.15)",
+              paddingBottom: "10px",
+              marginBottom: "14px",
+            }}
           >
-            All Packages
-          </button>
-          <button
-            onClick={() => handleSelectPreset('priority')}
-            style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '4px', fontSize: '9.5px', fontWeight: '700', cursor: 'pointer', color: '#0F172A' }}
+            <span
+              style={{
+                fontSize: "var(--t-label)",
+                fontWeight: "600",
+                color: "rgba(255,255,255,0.65)",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              Live municipal ROI &amp; risk offset
+            </span>
+            <span
+              style={{
+                fontSize: "var(--t-label)",
+                background: "rgba(255,255,255,0.12)",
+                padding: "2px 8px",
+                borderRadius: "var(--r-sm)",
+                color: "rgba(255,255,255,0.9)",
+                fontWeight: "600",
+              }}
+            >
+              Interactive
+            </span>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: "12px",
+              textAlign: "center",
+            }}
           >
-            AMRUT 2.0 Priority
-          </button>
-          <button
-            onClick={() => handleSelectPreset('clear')}
-            style={{ background: '#F8FAFC', border: '1px solid #CBD5E1', padding: '2px 8px', borderRadius: '4px', fontSize: '9.5px', fontWeight: '700', cursor: 'pointer', color: '#64748B' }}
+            <div>
+              <div
+                style={{
+                  fontSize: "var(--t-label)",
+                  color: "rgba(255,255,255,0.6)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  marginBottom: "4px",
+                }}
+              >
+                Runoff cut
+              </div>
+              <div
+                className="num"
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  color: "#FFFFFF",
+                }}
+              >
+                −{totalReductionPct}%
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "var(--t-label)",
+                  color: "rgba(255,255,255,0.6)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  marginBottom: "4px",
+                }}
+              >
+                Investment
+              </div>
+              <div
+                className="num"
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  color: "#FFFFFF",
+                }}
+              >
+                ₹{totalCostCr} Cr
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "var(--t-label)",
+                  color: "rgba(255,255,255,0.6)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  marginBottom: "4px",
+                }}
+              >
+                Damage averted
+              </div>
+              <div
+                className="num"
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  color: "#6EE7A8",
+                }}
+              >
+                ₹{damagePreventedCr} Cr
+              </div>
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: "var(--t-label)",
+                  color: "rgba(255,255,255,0.6)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  marginBottom: "4px",
+                }}
+              >
+                Net ROI
+              </div>
+              <div
+                className="num"
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  color: "#FFFFFF",
+                }}
+              >
+                +{netRoiPct}%
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: "12px",
+              paddingTop: "10px",
+              borderTop: "1px solid rgba(255,255,255,0.1)",
+              fontSize: "11px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
           >
-            Reset
-          </button>
+            <span style={{ color: "rgba(255,255,255,0.85)" }}>
+              <strong>{peopleProtected.toLocaleString("en-IN")}</strong>{" "}
+              residents protected from flood risk
+            </span>
+            <span style={{ color: "rgba(255,255,255,0.55)" }}>
+              ₹{(DAMAGE_PER_RESIDENT_INR / 1000).toFixed(0)}k/resident ×{" "}
+              {EVENTS_PER_LIFECYCLE} events
+            </span>
+          </div>
         </div>
+      )}
+
+      {/* Interventions Cards */}
+      <div
+        style={{
+          opacity: loading ? 0.6 : 1,
+          transition: "opacity 0.3s ease",
+        }}
+      >
+        {loading ? (
+          <div
+            className="intervention-card"
+            style={{
+              textAlign: "center",
+              padding: "20px",
+              background: "rgba(255, 255, 255, 0.6)",
+              border: "1px solid rgba(7, 23, 63, 0.1)",
+              borderRadius: "12px",
+              color: "var(--accent)",
+              fontFamily: "Overpass, sans-serif",
+              fontWeight: "600",
+            }}
+          >
+            Generating AI-powered municipal recommendations...
+          </div>
+        ) : (
+          <div className="interventions-list">
+            {interventions.map((intervention, index) => (
+              <InterventionCard
+                key={index}
+                intervention={intervention}
+                index={index}
+                isSelected={selectedIndices.includes(index)}
+                onToggle={handleToggle}
+                areaHa={areaHa}
+                stormIntensity={stormIntensity}
+                onOpenBoQ={(item, idx, costLakhs) =>
+                  setActiveBoQ({ item, idx, costLakhs })
+                }
+              />
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Tender Interventions List */}
-      <div>
-        {interventions.map((intervention, index) => (
-          <InterventionCard 
-            key={index}
-            intervention={intervention}
-            index={index}
-            isSelected={selectedIndices.includes(index)}
-            onToggle={handleToggle}
-            areaHa={areaHa}
-            stormIntensity={stormIntensity}
-            onOpenBoQ={(item) => setActiveBoQIntervention(item)}
-          />
-        ))}
-      </div>
+      {!loading && interventions.length > 0 && (
+        <div
+          style={{
+            fontSize: "11px",
+            color: "var(--text-secondary)",
+            textAlign: "center",
+            marginTop: "16px",
+            fontFamily: "Overpass, sans-serif",
+          }}
+        >
+          <em>
+            Click cards above to toggle solutions and test policy combinations
+            on the map.
+          </em>
+        </div>
+      )}
 
-      {/* CPWD BoQ Modal */}
-      <BoQModal 
-        intervention={activeBoQIntervention}
-        areaHa={areaHa}
-        isOpen={Boolean(activeBoQIntervention)}
-        onClose={() => setActiveBoQIntervention(null)}
-      />
+      {activeBoQ && (
+        <BillOfQuantitiesModal
+          intervention={activeBoQ.item}
+          index={activeBoQ.idx}
+          areaHa={areaHa}
+          costLakhs={activeBoQ.costLakhs}
+          onClose={() => setActiveBoQ(null)}
+        />
+      )}
     </div>
   );
 };
 
-export default React.memo(InterventionsSection);
+// Add CSS styles for the detail structure
+const styles = `
+.interventions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.intervention-tender {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.intervention-tender__code {
+  font-family: var(--font-mono);
+  font-size: var(--t-label);
+  color: var(--text-muted);
+}
+
+.selected-sandbox-card:hover {
+  transform: translateY(-2px);
+}
+
+.unselected-sandbox-card:hover {
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+`;
+
+// Inject styles if not already present
+if (
+  typeof document !== "undefined" &&
+  !document.getElementById("interventions-styles")
+) {
+  const styleSheet = document.createElement("style");
+  styleSheet.id = "interventions-styles";
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
+}
+
+export default InterventionsSection;

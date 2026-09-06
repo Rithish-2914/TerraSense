@@ -71,15 +71,15 @@ const PlanImpactCard = ({ simulationData, scenario, loading }) => {
               {impact.hasComparison ? (
                 <>
                   <span style={{ fontSize: '11px', color: '#888' }}>
-                    {loading ? '🔄' : `Baseline: ${impact.baseline.toLocaleString()}${impact.unit}`}
+                    {loading ? '' : `Baseline: ${impact.baseline.toLocaleString()}${impact.unit}`}
                   </span>
                   <span style={{ fontSize: '11px', color: '#888' }}>
-                    {loading ? '🔄' : `Scenario: ${impact.scenario.toLocaleString()}${impact.unit}`}
+                    {loading ? '' : `Scenario: ${impact.scenario.toLocaleString()}${impact.unit}`}
                   </span>
                 </>
               ) : (
                 <span style={{ fontSize: '11px', color: '#888' }}>
-                  {loading ? '🔄' : `Current: ${impact.scenario.toLocaleString()} ${impact.unit} affected`}
+                  {loading ? '' : `Current: ${impact.scenario.toLocaleString()} ${impact.unit} affected`}
                 </span>
               )}
             </div>
@@ -87,9 +87,9 @@ const PlanImpactCard = ({ simulationData, scenario, loading }) => {
               marginTop: '6px',
               fontSize: '13px',
               fontWeight: 'bold',
-              color: !impact.hasComparison ? '#64748B' :
-                     Math.abs(impact.change) > 15 ? '#DC2626' : 
-                     Math.abs(impact.change) > 5 ? '#D97706' : '#0284C7'
+              color: !impact.hasComparison ? '#666' :
+                     Math.abs(impact.change) > 15 ? 'var(--danger)' : 
+                     Math.abs(impact.change) > 5 ? 'var(--warn)' : 'var(--accent)'
             }}>
               {loading ? 'Calculating...' : 
                 !impact.hasComparison ? 
@@ -107,7 +107,7 @@ const PlanImpactCard = ({ simulationData, scenario, loading }) => {
         <div style={{
           marginTop: '12px',
           padding: '10px',
-          background: '#f8f9fa',
+          background: 'var(--surface-sunken)',
           borderRadius: '4px',
           fontSize: '12px',
           color: '#666'

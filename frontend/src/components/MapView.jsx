@@ -1,68 +1,74 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Polyline,
+  CircleMarker,
+  Popup,
+  ZoomControl,
+  useMap,
+} from "react-leaflet";
+import L from "leaflet";
+import { fetchEvacuationRoutes } from "../utils/evacuationRouting";
 
 // Fix Leaflet default markers
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 const MAP_CONFIG = {
   defaultCenter: [10.7905, 78.7047], // Trichy default
-  zoom: 13
+  zoom: 13,
 };
 
 const mapStyles = {
   plan: {
-    color: '#0042A6',
+    color: "#0042A6",
     weight: 3.5,
     fillOpacity: 0.12,
-    fillColor: '#2E96F5',
-    dashArray: '6, 6'
+    fillColor: "#2E96F5",
+    dashArray: "6, 6",
   },
   floodRiskBaseline: {
-    color: '#EF4444',
+    color: "#EF4444",
     weight: 2,
-    fillOpacity: 0.50,
-    fillColor: '#EF4444'
+    fillOpacity: 0.5,
+    fillColor: "#EF4444",
   },
   floodRiskRCP45: {
-    color: '#DC2626',
+    color: "#DC2626",
     weight: 2.5,
     fillOpacity: 0.58,
-    fillColor: '#DC2626'
+    fillColor: "#DC2626",
   },
   floodRiskRCP85: {
-    color: '#991B1B',
+    color: "#991B1B",
     weight: 3,
     fillOpacity: 0.68,
-    fillColor: '#B91C1C'
+    fillColor: "#B91C1C",
   },
   floodRiskMitigated: {
-    color: '#059669',
+    color: "#059669",
     weight: 2.5,
     fillOpacity: 0.38,
-    fillColor: '#10B981'
+    fillColor: "#10B981",
   },
-  splitLeftBefore: {
-    color: '#DC2626',
-    weight: 3,
-    fillOpacity: 0.70,
-    fillColor: '#EF4444'
-  },
-  splitRightAfter: {
-    color: '#059669',
-    weight: 2.5,
-    fillOpacity: 0.45,
-    fillColor: '#10B981'
-  }
 };
 
 // High-performance direct Leaflet GeoJSON layer
-function FastGeoJSON({ data, style, onEachFeature }) {
+function FastGeoJSON({ data, style, onEachFeature, pane, renderer }) {
   const map = useMap();
   const layerRef = useRef(null);
 
@@ -78,13 +84,15 @@ function FastGeoJSON({ data, style, onEachFeature }) {
 
     try {
       const geoLayer = L.geoJSON(data, {
-        style: typeof style === 'function' ? style : () => style,
-        onEachFeature: onEachFeature
+        style: typeof style === "function" ? style : () => style,
+        onEachFeature: onEachFeature,
+        ...(pane ? { pane } : {}),
+        ...(renderer ? { renderer } : {}),
       });
       geoLayer.addTo(map);
       layerRef.current = geoLayer;
     } catch (err) {
-      console.error('GeoJSON rendering error:', err);
+      console.error("GeoJSON rendering error:", err);
     }
 
     return () => {
@@ -95,7 +103,27 @@ function FastGeoJSON({ data, style, onEachFeature }) {
         layerRef.current = null;
       }
     };
-  }, [map, data, style, onEachFeature]);
+  }, [map, data, style, onEachFeature, pane, renderer]);
+
+  return null;
+}
+
+// Hands the Leaflet map instance back out of MapContainer, and reports every
+// view change, which the hazard pane and any screen-space chrome depend on.
+function MapBridge({ onReady, onViewChange }) {
+  const map = useMap();
+
+  useEffect(() => {
+    onReady(map);
+  }, [map, onReady]);
+
+  useEffect(() => {
+    const handler = () => onViewChange();
+    map.on("move zoom resize", handler);
+    return () => {
+      map.off("move zoom resize", handler);
+    };
+  }, [map, onViewChange]);
 
   return null;
 }
@@ -108,7 +136,11 @@ function MapCenterUpdater({ center }) {
   useEffect(() => {
     if (!map || !center) return;
     const [lat, lon] = center;
-    if (prevCenterRef.current && prevCenterRef.current[0] === lat && prevCenterRef.current[1] === lon) {
+    if (
+      prevCenterRef.current &&
+      prevCenterRef.current[0] === lat &&
+      prevCenterRef.current[1] === lon
+    ) {
       return;
     }
     prevCenterRef.current = center;
@@ -120,475 +152,298 @@ function MapCenterUpdater({ center }) {
 
 // City-specific Realistic Evacuation Shelters & NASA MODIS LST Hotspots
 const CITY_SHELTERS_AND_HOTSPOTS = {
-  'trichy_area.geojson': {
+  "trichy_area.geojson": {
     shelters: [
       {
-        id: 'trichy-shelter-1',
-        name: 'Rockfort High-Ground Relief Hub',
-        type: 'Primary Flood Evacuation Shelter',
+        id: "trichy-shelter-1",
+        name: "Rockfort High-Ground Relief Hub",
+        type: "Primary Flood Evacuation Shelter",
         offset: [0.78, 0.72],
-        elevationMsl: '+94m MSL (Above Inundation Line)',
-        capacity: '1,600 Citizens',
-        amenities: 'Drinking Water, Solar Backup, Medical Aid'
+        elevationMsl: "+94m MSL (Above Inundation Line)",
+        capacity: "1,600 Citizens",
+        amenities: "Drinking Water, Solar Backup, Medical Aid",
       },
       {
-        id: 'trichy-shelter-2',
-        name: 'Trichy Municipal Indoor Sports Stadium',
-        type: 'Mass Relief & Logistics Center',
-        offset: [0.82, -0.70],
-        elevationMsl: '+98m MSL (Elevated Ridge)',
-        capacity: '2,400 Citizens',
-        amenities: 'Helipad Access, Cookhouse, Generators'
+        id: "trichy-shelter-2",
+        name: "Trichy Municipal Indoor Sports Stadium",
+        type: "Mass Relief & Logistics Center",
+        offset: [0.82, -0.7],
+        elevationMsl: "+98m MSL (Elevated Ridge)",
+        capacity: "2,400 Citizens",
+        amenities: "Helipad Access, Cookhouse, Generators",
       },
       {
-        id: 'trichy-shelter-3',
-        name: 'Anna Stadium Emergency Logistics Center',
-        type: 'First-Aid & Emergency Staging',
-        offset: [-0.75, 0.80],
-        elevationMsl: '+91m MSL (Elevated Mound)',
-        capacity: '950 Citizens',
-        amenities: 'Ambulance Station, Satellite Comms'
-      }
+        id: "trichy-shelter-3",
+        name: "Anna Stadium Emergency Logistics Center",
+        type: "First-Aid & Emergency Staging",
+        offset: [-0.75, 0.8],
+        elevationMsl: "+91m MSL (Elevated Mound)",
+        capacity: "950 Citizens",
+        amenities: "Ambulance Station, Satellite Comms",
+      },
     ],
-    hotspots: [
-      {
-        id: 'trichy-lst-1',
-        name: 'Thillai Nagar Commercial Core',
-        lstC: 41.2,
-        anomaly: '+6.4°C UHI Hotspot',
-        offset: [0.25, -0.20],
-        surface: 'Asphalt & Dense Commercial Rooftops',
-        severity: 'Severe Urban Heat Island'
-      },
-      {
-        id: 'trichy-lst-2',
-        name: 'Ponmalai Golden Rock Railway Sheds',
-        lstC: 39.8,
-        anomaly: '+5.0°C UHI Hotspot',
-        offset: [-0.35, -0.40],
-        surface: 'Unshaded Bitumen & Steel Sheds',
-        severity: 'High Thermal Exposure'
-      },
-      {
-        id: 'trichy-lst-3',
-        name: 'Central Bus Stand Concourse',
-        lstC: 38.6,
-        anomaly: '+3.8°C UHI Hotspot',
-        offset: [0.45, 0.30],
-        surface: 'Vehicular Concourse & Concrete',
-        severity: 'Moderate Thermal Stress'
-      },
-      {
-        id: 'trichy-lst-4',
-        name: 'Cauvery Riverfront Green Buffer',
-        lstC: 31.4,
-        anomaly: '-3.4°C Cool Island',
-        offset: [-0.60, 0.50],
-        surface: 'Canopy Trees & Waterbody',
-        severity: 'Natural Thermal Sink'
-      }
-    ]
   },
-  'mumbai_area.geojson': {
+  "mumbai_area.geojson": {
     shelters: [
       {
-        id: 'mumbai-shelter-1',
-        name: 'Bandra Kurla Elevated Disaster Hub',
-        type: 'Primary Flood Evacuation Shelter',
-        offset: [0.75, 0.70],
-        elevationMsl: '+24m MSL (High Ground Ridge)',
-        capacity: '3,200 Citizens',
-        amenities: 'Emergency Generators, Medical Triage, Helipad'
+        id: "mumbai-shelter-1",
+        name: "Bandra Kurla Elevated Disaster Hub",
+        type: "Primary Flood Evacuation Shelter",
+        offset: [0.75, 0.7],
+        elevationMsl: "+24m MSL (High Ground Ridge)",
+        capacity: "3,200 Citizens",
+        amenities: "Emergency Generators, Medical Triage, Helipad",
       },
       {
-        id: 'mumbai-shelter-2',
-        name: 'Dadar Central Municipal Staging Arena',
-        type: 'Mass Relief & Logistics Center',
-        offset: [0.80, -0.65],
-        elevationMsl: '+18m MSL (Elevated Structure)',
-        capacity: '2,800 Citizens',
-        amenities: 'Community Kitchen, Satellite Comms'
+        id: "mumbai-shelter-2",
+        name: "Dadar Central Municipal Staging Arena",
+        type: "Mass Relief & Logistics Center",
+        offset: [0.8, -0.65],
+        elevationMsl: "+18m MSL (Elevated Structure)",
+        capacity: "2,800 Citizens",
+        amenities: "Community Kitchen, Satellite Comms",
       },
       {
-        id: 'mumbai-shelter-3',
-        name: 'Worli High-Ground Relief Pavilion',
-        type: 'First-Aid & Coastal Emergency Staging',
-        offset: [-0.70, 0.75],
-        elevationMsl: '+22m MSL (Worli Hill Ridge)',
-        capacity: '1,500 Citizens',
-        amenities: 'High-Capacity Drainage Pumps, Solar Inverters'
-      }
+        id: "mumbai-shelter-3",
+        name: "Worli High-Ground Relief Pavilion",
+        type: "First-Aid & Coastal Emergency Staging",
+        offset: [-0.7, 0.75],
+        elevationMsl: "+22m MSL (Worli Hill Ridge)",
+        capacity: "1,500 Citizens",
+        amenities: "High-Capacity Drainage Pumps, Solar Inverters",
+      },
     ],
-    hotspots: [
-      {
-        id: 'mumbai-lst-1',
-        name: 'Lower Parel Mill Compound Glass Corridors',
-        lstC: 42.5,
-        anomaly: '+7.1°C UHI Hotspot',
-        offset: [0.20, -0.25],
-        surface: 'Glass Facades & High-Rise Concrete Plazas',
-        severity: 'Severe Urban Heat Island'
-      },
-      {
-        id: 'mumbai-lst-2',
-        name: 'Kurla Transit & Rake Maintenance Yard',
-        lstC: 40.4,
-        anomaly: '+5.0°C UHI Hotspot',
-        offset: [-0.30, -0.35],
-        surface: 'Railway Bitumen & Metal Roofs',
-        severity: 'High Thermal Exposure'
-      },
-      {
-        id: 'mumbai-lst-3',
-        name: 'Andheri Link Road Bitumen Apron',
-        lstC: 39.1,
-        anomaly: '+3.7°C UHI Hotspot',
-        offset: [0.40, 0.35],
-        surface: 'Multi-lane Asphalt & Concrete Concourse',
-        severity: 'Moderate Thermal Stress'
-      },
-      {
-        id: 'mumbai-lst-4',
-        name: 'Mahim Creek Mangrove Bio-Sink',
-        lstC: 29.8,
-        anomaly: '-5.6°C Cool Island',
-        offset: [-0.55, 0.45],
-        surface: 'Dense Mangrove Forest & Tidal Estuary',
-        severity: 'Natural Thermal Sink'
-      }
-    ]
   },
-  'chennai_area.geojson': {
+  "chennai_area.geojson": {
     shelters: [
       {
-        id: 'chennai-shelter-1',
-        name: 'Guindy Elevated Engineering Relief Center',
-        type: 'Primary Flood Evacuation Shelter',
-        offset: [0.75, 0.70],
-        elevationMsl: '+28m MSL (St. Thomas Ridge)',
-        capacity: '2,500 Citizens',
-        amenities: 'Solar Power, Medical Center, Rations'
+        id: "chennai-shelter-1",
+        name: "Guindy Elevated Engineering Relief Center",
+        type: "Primary Flood Evacuation Shelter",
+        offset: [0.75, 0.7],
+        elevationMsl: "+28m MSL (St. Thomas Ridge)",
+        capacity: "2,500 Citizens",
+        amenities: "Solar Power, Medical Center, Rations",
       },
       {
-        id: 'chennai-shelter-2',
-        name: 'Jawaharlal Nehru Indoor Mass Hub',
-        type: 'Mass Relief & Logistics Center',
-        offset: [0.80, -0.65],
-        elevationMsl: '+16m MSL (High Ground Ground)',
-        capacity: '3,000 Citizens',
-        amenities: 'Helipad Access, Food Staging, Water Purification'
+        id: "chennai-shelter-2",
+        name: "Jawaharlal Nehru Indoor Mass Hub",
+        type: "Mass Relief & Logistics Center",
+        offset: [0.8, -0.65],
+        elevationMsl: "+16m MSL (High Ground Ground)",
+        capacity: "3,000 Citizens",
+        amenities: "Helipad Access, Food Staging, Water Purification",
       },
       {
-        id: 'chennai-shelter-3',
-        name: 'Velachery High-Ground Community Shelter',
-        type: 'First-Aid & Emergency Staging',
-        offset: [-0.70, 0.75],
-        elevationMsl: '+19m MSL (Elevated Mound)',
-        capacity: '1,200 Citizens',
-        amenities: 'Ambulance Depot, Satellite Comms'
-      }
+        id: "chennai-shelter-3",
+        name: "Velachery High-Ground Community Shelter",
+        type: "First-Aid & Emergency Staging",
+        offset: [-0.7, 0.75],
+        elevationMsl: "+19m MSL (Elevated Mound)",
+        capacity: "1,200 Citizens",
+        amenities: "Ambulance Depot, Satellite Comms",
+      },
     ],
-    hotspots: [
-      {
-        id: 'chennai-lst-1',
-        name: 'T. Nagar Ranganathan St Bitumen Canyon',
-        lstC: 43.1,
-        anomaly: '+7.5°C UHI Hotspot',
-        offset: [0.20, -0.20],
-        surface: 'Dense Commercial Corridors & Waterproof Pavement',
-        severity: 'Severe Urban Heat Island'
-      },
-      {
-        id: 'chennai-lst-2',
-        name: 'Chennai Central Railway Transit Hub',
-        lstC: 41.0,
-        anomaly: '+5.4°C UHI Hotspot',
-        offset: [-0.30, -0.35],
-        surface: 'Railway Yards & Bitumen Platform Roofs',
-        severity: 'High Thermal Exposure'
-      },
-      {
-        id: 'chennai-lst-3',
-        name: 'Koyambedu Wholesale Concourse',
-        lstC: 39.7,
-        anomaly: '+4.1°C UHI Hotspot',
-        offset: [0.40, 0.30],
-        surface: 'Asphalt Loading Docks & Tin Sheds',
-        severity: 'Moderate Thermal Stress'
-      },
-      {
-        id: 'chennai-lst-4',
-        name: 'Adyar Eco-Park Wetland Buffer',
-        lstC: 30.2,
-        anomaly: '-5.4°C Cool Island',
-        offset: [-0.55, 0.50],
-        surface: 'Estuarine Mangroves & Waterbodies',
-        severity: 'Natural Thermal Sink'
-      }
-    ]
   },
-  'bangalore_area.geojson': {
+  "bangalore_area.geojson": {
     shelters: [
       {
-        id: 'blr-shelter-1',
-        name: 'Kanteerava High-Ground Disaster Hub',
-        type: 'Primary Flood Evacuation Shelter',
-        offset: [0.75, 0.70],
-        elevationMsl: '+935m MSL (High Ridge MSL)',
-        capacity: '3,500 Citizens',
-        amenities: 'High-Tension Generators, Heli-drop Zone, Trauma Care'
+        id: "blr-shelter-1",
+        name: "Kanteerava High-Ground Disaster Hub",
+        type: "Primary Flood Evacuation Shelter",
+        offset: [0.75, 0.7],
+        elevationMsl: "+935m MSL (High Ridge MSL)",
+        capacity: "3,500 Citizens",
+        amenities: "High-Tension Generators, Heli-drop Zone, Trauma Care",
       },
       {
-        id: 'blr-shelter-2',
-        name: 'Indiranagar Municipal Relief Compound',
-        type: 'Mass Relief & Logistics Center',
-        offset: [0.80, -0.65],
-        elevationMsl: '+928m MSL (Elevated Plateau)',
-        capacity: '2,000 Citizens',
-        amenities: 'Automated Sluice Monitoring, Solar Inverters'
+        id: "blr-shelter-2",
+        name: "Indiranagar Municipal Relief Compound",
+        type: "Mass Relief & Logistics Center",
+        offset: [0.8, -0.65],
+        elevationMsl: "+928m MSL (Elevated Plateau)",
+        capacity: "2,000 Citizens",
+        amenities: "Automated Sluice Monitoring, Solar Inverters",
       },
       {
-        id: 'blr-shelter-3',
-        name: 'Hebbal Elevated Civic Staging Post',
-        type: 'First-Aid & Lake Breach Evacuation',
-        offset: [-0.70, 0.75],
-        elevationMsl: '+922m MSL (Elevated Ridge)',
-        capacity: '1,100 Citizens',
-        amenities: 'NDRF Boat Staging, Satellite Comms'
-      }
+        id: "blr-shelter-3",
+        name: "Hebbal Elevated Civic Staging Post",
+        type: "First-Aid & Lake Breach Evacuation",
+        offset: [-0.7, 0.75],
+        elevationMsl: "+922m MSL (Elevated Ridge)",
+        capacity: "1,100 Citizens",
+        amenities: "NDRF Boat Staging, Satellite Comms",
+      },
     ],
-    hotspots: [
-      {
-        id: 'blr-lst-1',
-        name: 'Whitefield IT Corridor Glass Plaza',
-        lstC: 37.8,
-        anomaly: '+5.9°C UHI Hotspot',
-        offset: [0.25, -0.20],
-        surface: 'Commercial Glass Facades & Multi-Level Parking',
-        severity: 'Severe Urban Heat Island'
-      },
-      {
-        id: 'blr-lst-2',
-        name: 'Majestic Bus Station Concrete Apron',
-        lstC: 36.5,
-        anomaly: '+4.6°C UHI Hotspot',
-        offset: [-0.30, -0.35],
-        surface: 'Heavy Bitumen Concourse & Exhaust Heat',
-        severity: 'High Thermal Exposure'
-      },
-      {
-        id: 'blr-lst-3',
-        name: 'Peenya Industrial Metal Sheds',
-        lstC: 38.2,
-        anomaly: '+6.3°C UHI Hotspot',
-        offset: [0.40, 0.35],
-        surface: 'Corrugated Iron Roofing & Asphalt',
-        severity: 'High Thermal Stress'
-      },
-      {
-        id: 'blr-lst-4',
-        name: 'Cubbon Park & Sankey Lake Bio-Sink',
-        lstC: 27.2,
-        anomaly: '-4.7°C Cool Island',
-        offset: [-0.55, 0.45],
-        surface: 'Dense Botanical Canopy & Lake Surface',
-        severity: 'Natural Thermal Sink'
-      }
-    ]
   },
-  'delhi_area.geojson': {
+  "delhi_area.geojson": {
     shelters: [
       {
-        id: 'delhi-shelter-1',
-        name: 'Talkatora Ridge Disaster Relief Complex',
-        type: 'Primary Flood Evacuation Shelter',
-        offset: [0.75, 0.70],
-        elevationMsl: '+238m MSL (Delhi Ridge High Ground)',
-        capacity: '4,000 Citizens',
-        amenities: 'Solar Microgrid, Mobile Surgical Units, Water Rations'
+        id: "delhi-shelter-1",
+        name: "Talkatora Ridge Disaster Relief Complex",
+        type: "Primary Flood Evacuation Shelter",
+        offset: [0.75, 0.7],
+        elevationMsl: "+238m MSL (Delhi Ridge High Ground)",
+        capacity: "4,000 Citizens",
+        amenities: "Solar Microgrid, Mobile Surgical Units, Water Rations",
       },
       {
-        id: 'delhi-shelter-2',
-        name: 'Indira Gandhi Indoor Logistics Hub',
-        type: 'Mass Relief & Logistics Center',
-        offset: [0.80, -0.65],
-        elevationMsl: '+224m MSL (Elevated Complex)',
-        capacity: '3,200 Citizens',
-        amenities: 'Heavy Transport Staging, High-Capacity Pumps'
+        id: "delhi-shelter-2",
+        name: "Indira Gandhi Indoor Logistics Hub",
+        type: "Mass Relief & Logistics Center",
+        offset: [0.8, -0.65],
+        elevationMsl: "+224m MSL (Elevated Complex)",
+        capacity: "3,200 Citizens",
+        amenities: "Heavy Transport Staging, High-Capacity Pumps",
       },
       {
-        id: 'delhi-shelter-3',
-        name: 'Civil Lines Elevated Relief Station',
-        type: 'First-Aid & Yamuna Spill Emergency Hub',
-        offset: [-0.70, 0.75],
-        elevationMsl: '+228m MSL (High Ground Ridge)',
-        capacity: '1,800 Citizens',
-        amenities: 'Inflatable Boat Deployment, Comms Center'
-      }
+        id: "delhi-shelter-3",
+        name: "Civil Lines Elevated Relief Station",
+        type: "First-Aid & Yamuna Spill Emergency Hub",
+        offset: [-0.7, 0.75],
+        elevationMsl: "+228m MSL (High Ground Ridge)",
+        capacity: "1,800 Citizens",
+        amenities: "Inflatable Boat Deployment, Comms Center",
+      },
     ],
-    hotspots: [
-      {
-        id: 'delhi-lst-1',
-        name: 'Connaught Place Asphalt Ring & Concrete',
-        lstC: 45.6,
-        anomaly: '+8.2°C UHI Hotspot',
-        offset: [0.20, -0.20],
-        surface: 'Dense Masonry Colonades & Concentric Bitumen Roads',
-        severity: 'Severe Urban Heat Island'
-      },
-      {
-        id: 'delhi-lst-2',
-        name: 'Okhla Industrial Metal Fabrications',
-        lstC: 44.2,
-        anomaly: '+6.8°C UHI Hotspot',
-        offset: [-0.30, -0.35],
-        surface: 'Industrial Galvanized Iron Sheds & Asphalt',
-        severity: 'High Thermal Exposure'
-      },
-      {
-        id: 'delhi-lst-3',
-        name: 'Anand Vihar ISBT Bus Apron',
-        lstC: 43.5,
-        anomaly: '+6.1°C UHI Hotspot',
-        offset: [0.40, 0.30],
-        surface: 'Heavy Transport Concrete Apron',
-        severity: 'Severe Thermal Stress'
-      },
-      {
-        id: 'delhi-lst-4',
-        name: 'Yamuna Biodiversity Floodplain Sink',
-        lstC: 32.1,
-        anomaly: '-5.3°C Cool Island',
-        offset: [-0.55, 0.50],
-        surface: 'Wetland Grasses, Silt Channels & Native Forests',
-        severity: 'Natural Thermal Sink'
-      }
-    ]
   },
-  'kolkata_area.geojson': {
+  "kolkata_area.geojson": {
     shelters: [
       {
-        id: 'kol-shelter-1',
-        name: 'Salt Lake Stadium Elevated Disaster Complex',
-        type: 'Primary Flood Evacuation Shelter',
-        offset: [0.75, 0.70],
-        elevationMsl: '+18m MSL (Ramparts High Ground)',
-        capacity: '4,500 Citizens',
-        amenities: 'Mass Shelter Halls, Emergency Filtration, Helipad'
+        id: "kol-shelter-1",
+        name: "Salt Lake Stadium Elevated Disaster Complex",
+        type: "Primary Flood Evacuation Shelter",
+        offset: [0.75, 0.7],
+        elevationMsl: "+18m MSL (Ramparts High Ground)",
+        capacity: "4,500 Citizens",
+        amenities: "Mass Shelter Halls, Emergency Filtration, Helipad",
       },
       {
-        id: 'kol-shelter-2',
-        name: 'Netaji Indoor Mass Relief Center',
-        type: 'Mass Relief & Logistics Center',
-        offset: [0.80, -0.65],
-        elevationMsl: '+15m MSL (Elevated Plinth)',
-        capacity: '2,700 Citizens',
-        amenities: 'High-Volume Drainage Sump, Backup Generators'
+        id: "kol-shelter-2",
+        name: "Netaji Indoor Mass Relief Center",
+        type: "Mass Relief & Logistics Center",
+        offset: [0.8, -0.65],
+        elevationMsl: "+15m MSL (Elevated Plinth)",
+        capacity: "2,700 Citizens",
+        amenities: "High-Volume Drainage Sump, Backup Generators",
       },
       {
-        id: 'kol-shelter-3',
-        name: 'Alipore High-Ground Staging Post',
-        type: 'First-Aid & Cyclone Spill Emergency',
-        offset: [-0.70, 0.75],
-        elevationMsl: '+14m MSL (Elevated Ridge)',
-        capacity: '1,300 Citizens',
-        amenities: 'Ambulance Staging, Disaster Response Store'
-      }
+        id: "kol-shelter-3",
+        name: "Alipore High-Ground Staging Post",
+        type: "First-Aid & Cyclone Spill Emergency",
+        offset: [-0.7, 0.75],
+        elevationMsl: "+14m MSL (Elevated Ridge)",
+        capacity: "1,300 Citizens",
+        amenities: "Ambulance Staging, Disaster Response Store",
+      },
     ],
-    hotspots: [
-      {
-        id: 'kol-lst-1',
-        name: 'Burrabazar Dense Heritage Masonry Core',
-        lstC: 42.0,
-        anomaly: '+6.5°C UHI Hotspot',
-        offset: [0.20, -0.20],
-        surface: 'Narrow Brick Street Canyons & Bitumen Roofs',
-        severity: 'Severe Urban Heat Island'
-      },
-      {
-        id: 'kol-lst-2',
-        name: 'Howrah Station Rail Terminal & Yard',
-        lstC: 40.8,
-        anomaly: '+5.3°C UHI Hotspot',
-        offset: [-0.30, -0.35],
-        surface: 'Extensive Steel Sheds & Railway Ballast',
-        severity: 'High Thermal Exposure'
-      },
-      {
-        id: 'kol-lst-3',
-        name: 'Sealdah Flyover Bitumen Concourse',
-        lstC: 39.5,
-        anomaly: '+4.0°C UHI Hotspot',
-        offset: [0.40, 0.30],
-        surface: 'Elevated Concrete Flyover & Heavy Vehicular Density',
-        severity: 'Moderate Thermal Stress'
-      },
-      {
-        id: 'kol-lst-4',
-        name: 'East Kolkata Wetlands Bio-Sink',
-        lstC: 29.5,
-        anomaly: '-6.0°C Cool Island',
-        offset: [-0.55, 0.50],
-        surface: 'Natural Sewage-Fed Aquaculture Bheries & Reeds',
-        severity: 'Natural Thermal Sink'
-      }
-    ]
-  }
+  },
 };
 
-const MapView = ({ 
-  planData, 
-  overlayData, 
-  scenario, 
-  showOverlay, 
-  simulationData, 
+const MapView = ({
+  planData,
+  overlayData,
+  scenario,
+  showOverlay,
+  simulationData,
   uploadedFileName,
-  mitigationReductionPct = 0 
+  mitigationReductionPct = 0,
 }) => {
-  const [activeLayer, setActiveLayer] = useState('satellite'); // 'satellite', 'thermal', 'topography', 'streets'
-  const [splitViewActive, setSplitViewActive] = useState(false);
-  const [curtainPosition, setCurtainPosition] = useState(50); // percentage 0 to 100
+  const [activeLayer, setActiveLayer] = useState("satellite"); // 'satellite' | 'topography' | 'streets'
   const [showEvacuationRoutes, setShowEvacuationRoutes] = useState(false);
+  const [showHazardZones, setShowHazardZones] = useState(true);
+  const [hazardStyle, setHazardStyle] = useState("heat"); // 'heat' | 'tiers'
+  const [roadRoutes, setRoadRoutes] = useState(null);
+  const [routingState, setRoutingState] = useState("idle"); // idle | loading | road | fallback
+  const [mapInstance, setMapInstance] = useState(null);
+  const [viewTick, setViewTick] = useState(0);
+  const [hazardRenderer, setHazardRenderer] = useState(null);
+
+  const handleMapReady = useCallback((map) => setMapInstance(map), []);
+  const handleViewChange = useCallback(() => setViewTick((n) => n + 1), []);
+
+  // The hazard bands render into their own canvas pane. That pane is blurred
+  // in CSS for the heat style, which is what turns the overlapping translucent
+  // polygons into one continuous surface - and it has to be a separate pane so
+  // the ward boundary, corridors and markers stay crisp.
+  useEffect(() => {
+    if (!mapInstance) return;
+    if (!mapInstance.getPane("hazard")) {
+      const pane = mapInstance.createPane("hazard");
+      pane.style.zIndex = 410; // above tiles, below markers
+      pane.style.pointerEvents = "auto";
+    }
+    setHazardRenderer(L.canvas({ pane: "hazard", padding: 0.6 }));
+  }, [mapInstance]);
+
+  // The blur belongs to the heat style only; the geometric style needs crisp
+  // edges, so the pane class is switched rather than the layers rebuilt.
+  useEffect(() => {
+    if (!mapInstance) return;
+    const pane = mapInstance.getPane("hazard");
+    if (pane) pane.classList.toggle("is-crisp", hazardStyle !== "heat");
+  }, [mapInstance, hazardStyle, hazardRenderer]);
 
   // Calculate center and bounding geometry from planData (Memoized)
-  const { center: currentCenter, halfSpanLat, halfSpanLon } = useMemo(() => {
-    if (planData && planData.features && planData.features[0] && planData.features[0].geometry) {
+  const {
+    center: currentCenter,
+    halfSpanLat,
+    halfSpanLon,
+  } = useMemo(() => {
+    if (
+      planData &&
+      planData.features &&
+      planData.features[0] &&
+      planData.features[0].geometry
+    ) {
       const coords = planData.features[0].geometry.coordinates[0];
       if (coords && coords.length > 0) {
-        const lats = coords.map(c => c[1]);
-        const lons = coords.map(c => c[0]);
+        const lats = coords.map((c) => c[1]);
+        const lons = coords.map((c) => c[0]);
         const centerLat = lats.reduce((a, b) => a + b, 0) / lats.length;
         const centerLon = lons.reduce((a, b) => a + b, 0) / lons.length;
-        const halfSpanLat = Math.max((Math.max(...lats) - Math.min(...lats)) / 2, 0.008);
-        const halfSpanLon = Math.max((Math.max(...lons) - Math.min(...lons)) / 2, 0.008);
+        const halfSpanLat = Math.max(
+          (Math.max(...lats) - Math.min(...lats)) / 2,
+          0.008,
+        );
+        const halfSpanLon = Math.max(
+          (Math.max(...lons) - Math.min(...lons)) / 2,
+          0.008,
+        );
         return { center: [centerLat, centerLon], halfSpanLat, halfSpanLon };
       }
     }
-    return { center: MAP_CONFIG.defaultCenter, halfSpanLat: 0.015, halfSpanLon: 0.015 };
+    return {
+      center: MAP_CONFIG.defaultCenter,
+      halfSpanLat: 0.015,
+      halfSpanLon: 0.015,
+    };
   }, [planData]);
 
   // City-specific dataset resolver
   const cityKey = useMemo(() => {
-    if (!uploadedFileName) return 'trichy_area.geojson';
+    if (!uploadedFileName) return "trichy_area.geojson";
     const clean = uploadedFileName.toLowerCase();
     for (const key of Object.keys(CITY_SHELTERS_AND_HOTSPOTS)) {
-      if (clean.includes(key.replace('.geojson', '').replace('_area', ''))) {
+      if (clean.includes(key.replace(".geojson", "").replace("_area", ""))) {
         return key;
       }
     }
-    return 'trichy_area.geojson';
+    return "trichy_area.geojson";
   }, [uploadedFileName]);
 
-  const activeCityData = CITY_SHELTERS_AND_HOTSPOTS[cityKey] || CITY_SHELTERS_AND_HOTSPOTS['trichy_area.geojson'];
+  const activeCityData =
+    CITY_SHELTERS_AND_HOTSPOTS[cityKey] ||
+    CITY_SHELTERS_AND_HOTSPOTS["trichy_area.geojson"];
 
   // Generate 3 High-Ground Safe Evacuation Shelters for this specific city
   const safeShelters = useMemo(() => {
     return activeCityData.shelters.map((s) => ({
       ...s,
       position: [
-        currentCenter[0] + halfSpanLat * s.offset[0], 
-        currentCenter[1] + halfSpanLon * s.offset[1]
-      ]
+        currentCenter[0] + halfSpanLat * s.offset[0],
+        currentCenter[1] + halfSpanLon * s.offset[1],
+      ],
     }));
   }, [activeCityData, currentCenter, halfSpanLat, halfSpanLon]);
 
@@ -597,138 +452,174 @@ const MapView = ({
     return [
       // Corridor to Shelter 1 (North-East perimeter high ground)
       [
-        [currentCenter[0] - halfSpanLat * 0.35, currentCenter[1] + halfSpanLon * 0.20],
-        [currentCenter[0] + halfSpanLat * 0.15, currentCenter[1] + halfSpanLon * 0.55],
-        [currentCenter[0] + halfSpanLat * activeCityData.shelters[0].offset[0], currentCenter[1] + halfSpanLon * activeCityData.shelters[0].offset[1]]
+        [
+          currentCenter[0] - halfSpanLat * 0.35,
+          currentCenter[1] + halfSpanLon * 0.2,
+        ],
+        [
+          currentCenter[0] + halfSpanLat * 0.15,
+          currentCenter[1] + halfSpanLon * 0.55,
+        ],
+        [
+          currentCenter[0] + halfSpanLat * activeCityData.shelters[0].offset[0],
+          currentCenter[1] + halfSpanLon * activeCityData.shelters[0].offset[1],
+        ],
       ],
       // Corridor to Shelter 2 (North-West elevated arterial corridor)
       [
-        [currentCenter[0] - halfSpanLat * 0.40, currentCenter[1] - halfSpanLon * 0.25],
-        [currentCenter[0] + halfSpanLat * 0.20, currentCenter[1] - halfSpanLon * 0.55],
-        [currentCenter[0] + halfSpanLat * activeCityData.shelters[1].offset[0], currentCenter[1] + halfSpanLon * activeCityData.shelters[1].offset[1]]
+        [
+          currentCenter[0] - halfSpanLat * 0.4,
+          currentCenter[1] - halfSpanLon * 0.25,
+        ],
+        [
+          currentCenter[0] + halfSpanLat * 0.2,
+          currentCenter[1] - halfSpanLon * 0.55,
+        ],
+        [
+          currentCenter[0] + halfSpanLat * activeCityData.shelters[1].offset[0],
+          currentCenter[1] + halfSpanLon * activeCityData.shelters[1].offset[1],
+        ],
       ],
       // Corridor to Shelter 3 (South-East ridge route)
       [
-        [currentCenter[0] - halfSpanLat * 0.70, currentCenter[1] - halfSpanLon * 0.10],
-        [currentCenter[0] - halfSpanLat * 0.85, currentCenter[1] + halfSpanLon * 0.40],
-        [currentCenter[0] + halfSpanLat * activeCityData.shelters[2].offset[0], currentCenter[1] + halfSpanLon * activeCityData.shelters[2].offset[1]]
-      ]
+        [
+          currentCenter[0] - halfSpanLat * 0.7,
+          currentCenter[1] - halfSpanLon * 0.1,
+        ],
+        [
+          currentCenter[0] - halfSpanLat * 0.85,
+          currentCenter[1] + halfSpanLon * 0.4,
+        ],
+        [
+          currentCenter[0] + halfSpanLat * activeCityData.shelters[2].offset[0],
+          currentCenter[1] + halfSpanLon * activeCityData.shelters[2].offset[1],
+        ],
+      ],
     ];
   }, [activeCityData, currentCenter, halfSpanLat, halfSpanLon]);
 
-  // NASA MODIS Land Surface Temperature (LST) Urban Heat Hotspots for this specific city
-  const thermalHotspots = useMemo(() => {
-    return activeCityData.hotspots.map((h) => ({
-      ...h,
-      position: [
-        currentCenter[0] + halfSpanLat * h.offset[0], 
-        currentCenter[1] + halfSpanLon * h.offset[1]
-      ]
-    }));
-  }, [activeCityData, currentCenter, halfSpanLat, halfSpanLon]);
+  // Fetch road-following corridors the first time the layer is switched on for
+  // a given city, and whenever the study area moves. Nothing is requested
+  // while the layer is off, so the demo makes no network calls it doesn't use.
+  useEffect(() => {
+    if (!showEvacuationRoutes) return undefined;
 
-  // Split-Screen dynamic spatial GeoJSON calculation (Memoized)
-  const splitOverlays = useMemo(() => {
-    if (!splitViewActive || !overlayData || !overlayData.features || !overlayData.features[0]) return null;
-    const coords = overlayData.features[0].geometry.coordinates[0];
-    const lons = coords.map(c => c[0]);
-    const lats = coords.map(c => c[1]);
-    const minLon = Math.min(...lons);
-    const maxLon = Math.max(...lons);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    
-    const splitRatio = Math.min(0.99, Math.max(0.01, curtainPosition / 100));
-    const splitLon = minLon + (maxLon - minLon) * splitRatio;
+    const controller = new AbortController();
+    let cancelled = false;
 
-    const leftGeoJson = {
-      type: "FeatureCollection",
-      features: [{
-        type: "Feature",
-        properties: {
-          name: "BEFORE: Extreme Unmitigated Cloudburst Flood",
-          risk_tier: "Critical Hazard (>1.2m)",
-          depth_m: "1.15",
-          fill_color: "#EF4444",
-          stroke_color: "#DC2626",
-          fill_opacity: 0.65
-        },
-        geometry: {
-          type: "Polygon",
-          coordinates: [[
-            [minLon, minLat],
-            [splitLon, minLat],
-            [splitLon, maxLat],
-            [minLon, maxLat],
-            [minLon, minLat]
-          ]]
-        }
-      }]
+    setRoutingState("loading");
+    setRoadRoutes(null);
+
+    fetchEvacuationRoutes(currentCenter, safeShelters, {
+      signal: controller.signal,
+    })
+      .then((results) => {
+        if (cancelled) return;
+        const usable = results.filter(Boolean).length;
+        setRoadRoutes(results);
+        setRoutingState(usable > 0 ? "road" : "fallback");
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setRoutingState("fallback");
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
     };
+  }, [showEvacuationRoutes, safeShelters, currentCenter]);
 
-    const rightGeoJson = {
-      type: "FeatureCollection",
-      features: [{
-        type: "Feature",
-        properties: {
-          name: "AFTER: Green Infrastructure Sandbox Protection",
-          risk_tier: "Mitigated Eco Buffer (-52% Runoff, ₹8.9 Cr Saved)",
-          depth_m: "0.22",
-          fill_color: "#10B981",
-          stroke_color: "#059669",
-          fill_opacity: 0.45
-        },
-        geometry: {
-          type: "Polygon",
-          coordinates: [[
-            [splitLon, minLat],
-            [maxLon, minLat],
-            [maxLon, maxLat],
-            [splitLon, maxLat],
-            [splitLon, minLat]
-          ]]
+  // Shelters sit where OSRM snapped them - on a road a relief vehicle can
+  // actually reach - falling back to the calibrated offset when routing is
+  // unavailable.
+  const displayShelters = useMemo(() => {
+    return safeShelters.map((shelter, idx) => {
+      const route = roadRoutes && roadRoutes[idx];
+      return {
+        ...shelter,
+        position: route?.snappedDestination || shelter.position,
+        distanceKm: route?.distanceKm ?? null,
+        durationMin: route?.durationMin ?? null,
+      };
+    });
+  }, [safeShelters, roadRoutes]);
+
+  // Road geometry where we have it, the straight-line corridor where we don't.
+  const displayRoutes = useMemo(() => {
+    return safeShelters.map((shelter, idx) => {
+      const route = roadRoutes && roadRoutes[idx];
+      if (route) return { positions: route.positions, isRoad: true };
+      return { positions: evacuationPaths[idx], isRoad: false };
+    });
+  }, [safeShelters, roadRoutes, evacuationPaths]);
+
+  const getOverlayStyle = useCallback(
+    (feature) => {
+      if (mitigationReductionPct > 30 && !feature?.properties?.fill_color) {
+        return {
+          color: "#059669",
+          weight: 2.5,
+          fillOpacity: feature?.properties?.fill_opacity || 0.4,
+          fillColor: "#10B981",
+        };
+      }
+      if (feature && feature.properties && feature.properties.fill_color) {
+        const p = feature.properties;
+
+        // Two readings of the same geometry. 'heat' leaves the bands unstroked
+        // and lets the blurred pane fuse them into one density surface; 'tiers'
+        // outlines each band and drops the fills back, so the depth steps can be
+        // read off individually - the geometric style this overlay started as.
+        if (hazardStyle === "tiers") {
+          return {
+            color: p.stroke_color || p.fill_color,
+            weight: 1.4,
+            opacity: 0.9,
+            fillOpacity: Math.max(0.1, (p.fill_opacity ?? 0.3) * 0.62),
+            fillColor: p.fill_color,
+            lineJoin: "round",
+          };
         }
-      }]
-    };
 
-    return { leftGeoJson, rightGeoJson };
-  }, [splitViewActive, overlayData, curtainPosition]);
+        return {
+          color: p.stroke_color || p.fill_color,
+          weight: p.stroke_weight !== undefined ? p.stroke_weight : 2,
+          opacity: p.stroke_opacity !== undefined ? p.stroke_opacity : 1,
+          fillOpacity: p.fill_opacity !== undefined ? p.fill_opacity : 0.45,
+          fillColor: p.fill_color,
+          lineJoin: "round",
+        };
+      }
+      if (scenario === "baseline") {
+        return mapStyles.floodRiskBaseline;
+      } else if (scenario === "rcp85") {
+        return mapStyles.floodRiskRCP85;
+      } else {
+        return mapStyles.floodRiskRCP45;
+      }
+    },
+    [mitigationReductionPct, scenario, hazardStyle],
+  );
 
-  const getOverlayStyle = useCallback((feature) => {
-    if (mitigationReductionPct > 30) {
-      return {
-        color: '#059669',
-        weight: 2.5,
-        fillOpacity: feature?.properties?.fill_opacity || 0.40,
-        fillColor: '#10B981'
-      };
-    }
-    if (feature && feature.properties && feature.properties.fill_color) {
-      return {
-        color: feature.properties.stroke_color || feature.properties.fill_color,
-        weight: 2,
-        fillOpacity: feature.properties.fill_opacity !== undefined ? feature.properties.fill_opacity : 0.45,
-        fillColor: feature.properties.fill_color
-      };
-    }
-    if (scenario === 'baseline') {
-      return mapStyles.floodRiskBaseline;
-    } else if (scenario === 'rcp85') {
-      return mapStyles.floodRiskRCP85;
-    } else {
-      return mapStyles.floodRiskRCP45;
-    }
-  }, [mitigationReductionPct, scenario]);
+  const onEachOverlayFeature = useCallback(
+    (feature, layer) => {
+      if (feature && feature.properties) {
+        const name = feature.properties.name || "Climate Risk Zone";
+        const tier =
+          feature.properties.risk_tier ||
+          feature.properties.risk_level ||
+          "Flood Risk";
+        const depth =
+          feature.properties.depth_m !== undefined
+            ? `${feature.properties.depth_m}m`
+            : "Calculated";
+        const color =
+          feature.properties.fill_color ||
+          (mitigationReductionPct > 30 ? "#10B981" : "#EF4444");
 
-  const onEachOverlayFeature = useCallback((feature, layer) => {
-    if (feature && feature.properties) {
-      const name = feature.properties.name || 'Climate Risk Zone';
-      const tier = feature.properties.risk_tier || feature.properties.risk_level || 'Flood Risk';
-      const depth = feature.properties.depth_m !== undefined ? `${feature.properties.depth_m}m` : 'Calculated';
-      const color = feature.properties.fill_color || (mitigationReductionPct > 30 ? '#10B981' : '#EF4444');
-      
-      layer.bindPopup(`
-        <div style="font-family: 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.5; min-width: 190px;">
+        layer.bindPopup(`
+        <div style="font-size: 13px; line-height: 1.5; min-width: 190px;">
           <div style="display: inline-block; background: ${color}20; color: ${color}; border: 1px solid ${color}80; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 4px; margin-bottom: 4px;">
             ${tier.toUpperCase()}
           </div>
@@ -741,264 +632,140 @@ const MapView = ({
           </div>
         </div>
       `);
-    }
-  }, [mitigationReductionPct]);
+      }
+    },
+    [mitigationReductionPct],
+  );
 
-  const onEachPlanFeature = useCallback((feature, layer) => {
-    const areaName = uploadedFileName ? uploadedFileName.replace('.geojson', '').replace('_area', '') : 'Analysis Ward';
-    layer.bindPopup(`
-      <div style="font-family: 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.5;">
+  const onEachPlanFeature = useCallback(
+    (feature, layer) => {
+      const areaName = uploadedFileName
+        ? uploadedFileName.replace(".geojson", "").replace("_area", "")
+        : "Analysis Ward";
+      layer.bindPopup(`
+      <div style="font-size: 13px; line-height: 1.5;">
         <strong style="color: #0042A6; font-size: 14px;">📍 Study Ward: ${areaName}</strong><br/>
         <span style="color: #555;">Layer Spectrum: <strong>${activeLayer.toUpperCase()}</strong></span>
       </div>
     `);
-  }, [uploadedFileName, activeLayer]);
+    },
+    [uploadedFileName, activeLayer],
+  );
 
   return (
-    <div className="map-container" style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-      {/* Top Controls Toolbar */}
-      <div style={{
-        position: 'absolute',
-        top: '20px',
-        left: '20px',
-        zIndex: 1000,
-        background: 'rgba(255, 255, 255, 0.96)',
-        borderRadius: '14px',
-        padding: '6px',
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: '6px',
-        boxShadow: '0 8px 24px rgba(7, 23, 63, 0.15)',
-        border: '1px solid rgba(255, 255, 255, 0.5)'
-      }}>
-        {/* Layer Switchers */}
-        <div style={{ display: 'flex', gap: '3px', background: 'rgba(7, 23, 63, 0.05)', padding: '3px', borderRadius: '10px' }}>
-          <button
-            onClick={() => setActiveLayer('satellite')}
-            style={{
-              border: 'none',
-              background: activeLayer === 'satellite' ? '#07173F' : 'transparent',
-              color: activeLayer === 'satellite' ? '#FFFFFF' : '#07173F',
-              padding: '6px 10px',
-              borderRadius: '8px',
-              fontSize: '11px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            🛰️ GIBS
-          </button>
+    <div className="map-container">
+      {/* Map chrome - centred in the strip of map to the right of the status
+          card, so it reads as deliberate and can never collide with it. */}
+      <div className="map-toolbar">
+        <div className="map-toolbar__bar">
+          <div className="map-toolbar__group" role="group" aria-label="Basemap">
+            <button
+              className={`map-toolbar__seg${activeLayer === "satellite" ? " is-active" : ""}`}
+              onClick={() => setActiveLayer("satellite")}
+              title="NASA GIBS / Esri high-resolution imagery"
+            >
+              Satellite
+            </button>
+            <button
+              className={`map-toolbar__seg${activeLayer === "topography" ? " is-active" : ""}`}
+              onClick={() => setActiveLayer("topography")}
+              title="SRTM terrain"
+            >
+              Terrain
+            </button>
+            <button
+              className={`map-toolbar__seg${activeLayer === "streets" ? " is-active" : ""}`}
+              onClick={() => setActiveLayer("streets")}
+              title="Street basemap"
+            >
+              Streets
+            </button>
+          </div>
 
-          <button
-            onClick={() => setActiveLayer('thermal')}
-            style={{
-              border: 'none',
-              background: activeLayer === 'thermal' ? '#E43700' : 'transparent',
-              color: activeLayer === 'thermal' ? '#FFFFFF' : '#07173F',
-              padding: '6px 10px',
-              borderRadius: '8px',
-              fontSize: '11px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            🌡️ Thermal
-          </button>
+          <div className="map-toolbar__group map-toolbar__group--plain">
+            <button
+              className={`map-toolbar__toggle${showEvacuationRoutes ? " is-on" : ""}`}
+              onClick={() => setShowEvacuationRoutes(!showEvacuationRoutes)}
+              aria-pressed={showEvacuationRoutes}
+              title="High-ground shelters and road-routed evacuation corridors"
+            >
+              <span
+                className={`map-toolbar__dot${showEvacuationRoutes && routingState === "loading" ? " is-busy" : ""}`}
+              />
+              Evacuation
+              {showEvacuationRoutes && routingState === "loading" && (
+                <span className="map-toolbar__note">routing…</span>
+              )}
+              {showEvacuationRoutes && routingState === "fallback" && (
+                <span
+                  className="map-toolbar__note"
+                  title="Road routing unavailable - showing direct corridors"
+                >
+                  approx.
+                </span>
+              )}
+            </button>
 
-          <button
-            onClick={() => setActiveLayer('topography')}
-            style={{
-              border: 'none',
-              background: activeLayer === 'topography' ? '#0042A6' : 'transparent',
-              color: activeLayer === 'topography' ? '#FFFFFF' : '#07173F',
-              padding: '6px 10px',
-              borderRadius: '8px',
-              fontSize: '11px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
-          >
-            🏔️ Terrain
-          </button>
+            <button
+              className={`map-toolbar__toggle${showHazardZones ? " is-on" : ""}`}
+              onClick={() => setShowHazardZones(!showHazardZones)}
+              aria-pressed={showHazardZones}
+              title="Show or hide the inundation surface"
+            >
+              <span className="map-toolbar__dot" />
+              Hazard
+            </button>
+          </div>
 
-          <button
-            onClick={() => setActiveLayer('streets')}
-            style={{
-              border: 'none',
-              background: activeLayer === 'streets' ? '#07173F' : 'transparent',
-              color: activeLayer === 'streets' ? '#FFFFFF' : '#07173F',
-              padding: '6px 10px',
-              borderRadius: '8px',
-              fontSize: '11px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px'
-            }}
+          {/* How the hazard surface is drawn: a continuous heat surface, or the
+            discrete banded tiers this started as. */}
+          <div
+            className="map-toolbar__group"
+            role="group"
+            aria-label="Hazard style"
           >
-            🗺️ Streets
-          </button>
-        </div>
-
-        {/* Feature Toggles: Split View & Evacuation Router */}
-        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-          <button
-            onClick={() => setSplitViewActive(!splitViewActive)}
-            style={{
-              border: splitViewActive ? '1px solid #00E5FF' : '1px solid rgba(7, 23, 63, 0.15)',
-              background: splitViewActive ? '#07173F' : '#FFFFFF',
-              color: splitViewActive ? '#00E5FF' : '#07173F',
-              padding: '6px 12px',
-              borderRadius: '10px',
-              fontSize: '11px',
-              fontWeight: '800',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              boxShadow: splitViewActive ? '0 0 12px rgba(0, 229, 255, 0.4)' : 'none'
-            }}
-          >
-            <span>🪟 Split View</span>
-            {splitViewActive && <span style={{ fontSize: '9px', background: '#00E5FF', color: '#07173F', padding: '1px 5px', borderRadius: '4px' }}>ON</span>}
-          </button>
-
-          <button
-            onClick={() => setShowEvacuationRoutes(!showEvacuationRoutes)}
-            style={{
-              border: showEvacuationRoutes ? '1px solid #27AE60' : '1px solid rgba(7, 23, 63, 0.15)',
-              background: showEvacuationRoutes ? '#ECFDF5' : '#FFFFFF',
-              color: showEvacuationRoutes ? '#065F46' : '#07173F',
-              padding: '6px 12px',
-              borderRadius: '10px',
-              fontSize: '11px',
-              fontWeight: '800',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              boxShadow: showEvacuationRoutes ? '0 0 12px rgba(39, 174, 96, 0.3)' : 'none'
-            }}
-          >
-            <span>🚨 Evacuation Routes</span>
-            {showEvacuationRoutes && <span style={{ fontSize: '9px', background: '#27AE60', color: '#FFFFFF', padding: '1px 5px', borderRadius: '4px' }}>ACTIVE</span>}
-          </button>
+            <button
+              className={`map-toolbar__seg${hazardStyle === "heat" ? " is-active" : ""}`}
+              onClick={() => setHazardStyle("heat")}
+              title="Continuous blurred density surface"
+            >
+              Heat
+            </button>
+            <button
+              className={`map-toolbar__seg${hazardStyle === "tiers" ? " is-active" : ""}`}
+              onClick={() => setHazardStyle("tiers")}
+              title="Discrete outlined depth tiers"
+            >
+              Tiers
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Swipe Curtain Draggable Control Widget & Vertical Divider Line */}
-      {splitViewActive && (
-        <>
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            bottom: 0,
-            left: `${curtainPosition}%`,
-            width: '4px',
-            background: '#00E5FF',
-            zIndex: 1000,
-            boxShadow: '0 0 16px #00E5FF, 0 0 32px rgba(0, 229, 255, 0.7)',
-            pointerEvents: 'none'
-          }}>
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '38px',
-              height: '38px',
-              borderRadius: '50%',
-              background: '#07173F',
-              border: '2px solid #00E5FF',
-              color: '#00E5FF',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '13px',
-              fontWeight: '900',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.6)'
-            }}>
-              ◀▶
-            </div>
-          </div>
-
-          <div style={{
-            position: 'absolute',
-            bottom: '25px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1001,
-            background: 'rgba(7, 23, 63, 0.95)',
-            color: '#FFFFFF',
-            padding: '12px 24px',
-            borderRadius: '24px',
-            boxShadow: '0 16px 36px rgba(0,0,0,0.5)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '8px',
-            minWidth: '340px',
-            border: '1px solid rgba(0, 229, 255, 0.4)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: '11px', fontWeight: '800' }}>
-              <span style={{ color: '#FF6B6B' }}>◀ BEFORE: Extreme Flood</span>
-              <span style={{ color: '#4ADE80' }}>AFTER: Green Sandbox ▶</span>
-            </div>
-            <input
-              type="range"
-              min="5"
-              max="95"
-              value={curtainPosition}
-              onChange={(e) => setCurtainPosition(parseInt(e.target.value))}
-              style={{
-                width: '100%',
-                accentColor: '#00E5FF',
-                cursor: 'ew-resize',
-                height: '8px'
-              }}
-            />
-            <div style={{ fontSize: '10.5px', color: '#00E5FF', fontWeight: '600' }}>
-              Drag curtain ({curtainPosition}%) to slice between flood hazard & mitigation
-            </div>
-          </div>
-        </>
-      )}
-
       {/* Map Container */}
-      <MapContainer 
-        center={currentCenter} 
-        zoom={MAP_CONFIG.zoom} 
+      <MapContainer
+        center={currentCenter}
+        zoom={MAP_CONFIG.zoom}
         preferCanvas={true}
-        style={{ height: '100%', width: '100%' }}
+        /* The default top-left zoom sits underneath the status card, and the
+           card's height changes with the ward name - so dock it bottom-right,
+           the one corner nothing else claims. */
+        zoomControl={false}
+        style={{ height: "100%", width: "100%" }}
       >
+        <ZoomControl position="bottomright" />
+        <MapBridge onReady={handleMapReady} onViewChange={handleViewChange} />
         <MapCenterUpdater center={currentCenter} />
 
         {/* Base Map Layers */}
-        {activeLayer === 'satellite' ? (
+        {activeLayer === "satellite" ? (
           <TileLayer
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
             attribution="© NASA & Esri High-Resolution World Imagery"
             maxZoom={18}
             keepBuffer={4}
           />
-        ) : activeLayer === 'thermal' ? (
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-            attribution="CartoDB Dark Matter & NASA MODIS LST Thermal Spectrum"
-            maxZoom={18}
-            keepBuffer={4}
-          />
-        ) : activeLayer === 'topography' ? (
+        ) : activeLayer === "topography" ? (
           <TileLayer
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}"
             attribution="© Esri Topo & USGS SRTM 30m Elevation"
@@ -1013,80 +780,140 @@ const MapView = ({
             keepBuffer={4}
           />
         )}
-        
+
         {/* Planning area polygon */}
         {planData && (
-          <FastGeoJSON 
-            data={planData} 
+          <FastGeoJSON
+            data={planData}
             style={mapStyles.plan}
             onEachFeature={onEachPlanFeature}
           />
         )}
-        
-        {/* If Split View is Active: Render Sliced Before/After GeoJSON layers */}
-        {splitViewActive && splitOverlays ? (
-          <>
-            <FastGeoJSON 
-              data={splitOverlays.leftGeoJson} 
-              style={mapStyles.splitLeftBefore}
-              onEachFeature={onEachOverlayFeature}
-            />
-            <FastGeoJSON 
-              data={splitOverlays.rightGeoJson} 
-              style={mapStyles.splitRightAfter}
-              onEachFeature={onEachOverlayFeature}
-            />
-          </>
-        ) : (
-          /* Normal Single Mode GeoJSON */
-          showOverlay && overlayData && (
-            <FastGeoJSON 
-              data={overlayData} 
-              style={getOverlayStyle}
-              onEachFeature={onEachOverlayFeature}
-            />
-          )
+
+        {/* Hazard tiers, behind their own toggle so the corridors underneath
+            can actually be read. */}
+        {showHazardZones && showOverlay && overlayData && (
+          <FastGeoJSON
+            data={overlayData}
+            style={getOverlayStyle}
+            onEachFeature={onEachOverlayFeature}
+            pane="hazard"
+            renderer={hazardRenderer}
+          />
         )}
 
         {/* High-Ground Emergency Evacuation Shelters & Corridors */}
         {showEvacuationRoutes && (
           <>
-            {/* Safe Evacuation Polyline Paths */}
-            {evacuationPaths.map((path, idx) => (
-              <Polyline
-                key={`evac-path-${idx}`}
-                positions={path}
-                pathOptions={{
-                  color: '#27AE60',
-                  weight: 4,
-                  dashArray: '8, 8',
-                  opacity: 0.9
-                }}
-              />
-            ))}
+            {/* Evacuation corridors. A solid casing under a coloured core is
+                how road routes are drawn on every mapping product - it keeps
+                the line readable over both imagery and street basemaps.
+                Straight-line fallbacks stay dashed, so an unrouted corridor
+                never passes itself off as a surveyed one. */}
+            {displayRoutes.map((route, idx) =>
+              route.positions ? (
+                <React.Fragment key={`evac-path-${idx}`}>
+                  {route.isRoad && (
+                    <Polyline
+                      positions={route.positions}
+                      pathOptions={{
+                        color: "#FFFFFF",
+                        weight: 7,
+                        opacity: 0.85,
+                      }}
+                    />
+                  )}
+                  <Polyline
+                    positions={route.positions}
+                    pathOptions={{
+                      color: route.isRoad ? "#15803D" : "#27AE60",
+                      weight: route.isRoad ? 4 : 3,
+                      dashArray: route.isRoad ? null : "8, 8",
+                      opacity: route.isRoad ? 0.95 : 0.7,
+                    }}
+                  />
+                </React.Fragment>
+              ) : null,
+            )}
 
             {/* Shelter Markers */}
-            {safeShelters.map((shelter) => (
+            {displayShelters.map((shelter) => (
               <CircleMarker
                 key={shelter.id}
                 center={shelter.position}
                 radius={9}
                 pathOptions={{
-                  color: '#065F46',
-                  fillColor: '#10B981',
+                  color: "#065F46",
+                  fillColor: "#10B981",
                   fillOpacity: 0.95,
-                  weight: 3
+                  weight: 3,
                 }}
               >
                 <Popup>
-                  <div style={{ fontFamily: 'Segoe UI, sans-serif', fontSize: '12px', lineHeight: 1.5, minWidth: '180px' }}>
-                    <div style={{ fontSize: '10px', background: '#D1FAE5', color: '#065F46', fontWeight: '800', padding: '2px 6px', borderRadius: '4px', display: 'inline-block', marginBottom: '4px' }}>
+                  <div
+                    style={{
+                      fontSize: "12px",
+                      lineHeight: 1.5,
+                      minWidth: "180px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "10px",
+                        background: "#D1FAE5",
+                        color: "#065F46",
+                        fontWeight: "800",
+                        padding: "2px 6px",
+                        borderRadius: "4px",
+                        display: "inline-block",
+                        marginBottom: "4px",
+                      }}
+                    >
                       SAFE HIGH-GROUND SHELTER
                     </div>
-                    <strong style={{ color: '#07173F', fontSize: '13px', display: 'block' }}>{shelter.name}</strong>
-                    <div style={{ color: '#059669', fontWeight: '700', marginTop: '2px' }}>📍 Elevation: {shelter.elevationMsl}</div>
-                    <div style={{ color: '#333' }}>👥 Capacity: <strong>{shelter.capacity}</strong></div>
-                    <div style={{ fontSize: '11px', color: '#64748B', marginTop: '4px', borderTop: '1px solid #E2E8F0', paddingTop: '4px' }}>
+                    <strong
+                      style={{
+                        color: "#07173F",
+                        fontSize: "13px",
+                        display: "block",
+                      }}
+                    >
+                      {shelter.name}
+                    </strong>
+                    <div
+                      style={{
+                        color: "#059669",
+                        fontWeight: "700",
+                        marginTop: "2px",
+                      }}
+                    >
+                      📍 Elevation: {shelter.elevationMsl}
+                    </div>
+                    <div style={{ color: "#333" }}>
+                      👥 Capacity: <strong>{shelter.capacity}</strong>
+                    </div>
+                    {shelter.distanceKm !== null && (
+                      <div
+                        className="num"
+                        style={{
+                          color: "#0042A6",
+                          fontWeight: "600",
+                          marginTop: "2px",
+                        }}
+                      >
+                        {shelter.distanceKm.toFixed(1)} km by road · ~
+                        {Math.round(shelter.durationMin)} min drive
+                      </div>
+                    )}
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#64748B",
+                        marginTop: "4px",
+                        borderTop: "1px solid #E2E8F0",
+                        paddingTop: "4px",
+                      }}
+                    >
                       🏥 {shelter.amenities}
                     </div>
                   </div>
@@ -1097,50 +924,6 @@ const MapView = ({
         )}
 
         {/* NASA MODIS Land Surface Temperature (LST) Urban Heat Hotspots */}
-        {activeLayer === 'thermal' && (
-          <>
-            {thermalHotspots.map((hotspot) => (
-              <CircleMarker
-                key={hotspot.id}
-                center={hotspot.position}
-                radius={hotspot.lstC > 35 ? 12 : 10}
-                pathOptions={{
-                  color: hotspot.lstC > 35 ? '#FF0055' : '#00E5FF',
-                  fillColor: hotspot.lstC > 35 ? '#FF3300' : '#00B4D8',
-                  fillOpacity: 0.85,
-                  weight: 3
-                }}
-              >
-                <Popup>
-                  <div style={{ fontFamily: 'Segoe UI, sans-serif', fontSize: '12px', lineHeight: 1.5, minWidth: '190px' }}>
-                    <div style={{
-                      fontSize: '10px',
-                      background: hotspot.lstC > 35 ? '#FFE4E6' : '#E0F2FE',
-                      color: hotspot.lstC > 35 ? '#E11D48' : '#0284C7',
-                      fontWeight: '800',
-                      padding: '2px 6px',
-                      borderRadius: '4px',
-                      display: 'inline-block',
-                      marginBottom: '4px'
-                    }}>
-                      🌡️ NASA MODIS LST ANOMALY
-                    </div>
-                    <strong style={{ color: '#07173F', fontSize: '13px', display: 'block' }}>{hotspot.name}</strong>
-                    <div style={{ color: hotspot.lstC > 35 ? '#E43700' : '#0284C7', fontWeight: '800', fontSize: '15px', marginTop: '2px' }}>
-                      {hotspot.lstC}°C <span style={{ fontSize: '11px', fontWeight: '600' }}>({hotspot.anomaly})</span>
-                    </div>
-                    <div style={{ color: '#555', fontSize: '11px', marginTop: '3px' }}>
-                      🏗️ Surface: <strong>{hotspot.surface}</strong>
-                    </div>
-                    <div style={{ fontSize: '10.5px', color: '#64748B', marginTop: '4px', borderTop: '1px solid #E2E8F0', paddingTop: '4px' }}>
-                      ⚠️ Status: <strong>{hotspot.severity}</strong>
-                    </div>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            ))}
-          </>
-        )}
       </MapContainer>
     </div>
   );

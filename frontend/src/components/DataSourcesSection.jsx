@@ -36,14 +36,14 @@ const DataSourcesSection = () => {
             <span style={{
               fontFamily: 'Fira Sans, sans-serif',
               fontWeight: '600',
-              color: '#07173F'
+              color: 'var(--text)'
             }}>
               {source.name}
             </span>
             <span style={{
               fontFamily: 'Overpass, sans-serif',
               fontSize: '11px',
-              color: '#0042A6',
+              color: 'var(--accent)',
               fontWeight: '500'
             }}>
               {source.description}
@@ -62,7 +62,7 @@ const DataSourcesSection = () => {
       }}>
         <span style={{
           fontSize: '11px',
-          color: '#0042A6',
+          color: 'var(--accent)',
           fontFamily: 'Overpass, sans-serif',
           fontWeight: '600',
           textTransform: 'uppercase',

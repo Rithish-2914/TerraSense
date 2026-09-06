@@ -1,14 +1,116 @@
 import React, { useState, useMemo } from 'react';
+import './StormHydrographCard.css';
+
+/**
+ * 24-hour storm hydrograph.
+ *
+ * The chart is laid out in a fixed viewBox and scaled by the SVG itself, so
+ * the same component serves the narrow control rail and the expanded modal
+ * without two sets of geometry. Only the aspect ratio changes between them.
+ */
+const HydrographChart = ({ dataPoints, maxQ, maxRain, inflowPath, outflowPath, hoveredHour, setHoveredHour, tall }) => {
+  const W = 620;
+  const H = tall ? 380 : 240;
+  const padL = 44;
+  const padR = 16;
+  const padT = 18;
+  const padB = 34;
+
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+
+  const getX = (hour) => padL + ((hour - 1) / 23) * plotW;
+  const getY = (val) => padT + plotH - (val / maxQ) * plotH;
+
+  const gridValues = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(maxQ * f));
+  const activePoint = hoveredHour !== null ? dataPoints[hoveredHour - 1] : null;
+
+  // Rebuild the paths against this instance's geometry.
+  const line = (key) =>
+    dataPoints.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(d.hour).toFixed(1)} ${getY(d[key]).toFixed(1)}`).join(' ');
+  const inflow = line('inflowQ');
+  const outflow = line('outflowQ');
+  const baseY = padT + plotH;
+
+  return (
+    <div className="hydrograph__plot">
+      <svg viewBox={`0 0 ${W} ${H}`} className="hydrograph__svg" role="img"
+           aria-label="Twenty-four hour storm hydrograph comparing unmitigated and mitigated discharge">
+        {/* Horizontal grid + discharge axis */}
+        {gridValues.map((v, i) => (
+          <g key={`grid-${i}`}>
+            <line x1={padL} x2={W - padR} y1={getY(v)} y2={getY(v)}
+                  stroke="var(--border)" strokeWidth="1" strokeDasharray={i === 0 ? null : '3,3'} />
+            <text x={padL - 8} y={getY(v) + 3.5} textAnchor="end" className="hydrograph__tick">{v}</text>
+          </g>
+        ))}
+
+        {/* Rainfall hyetograph, drawn downward from the top */}
+        {dataPoints.map((d) => {
+          if (!d.rainMmH) return null;
+          const barH = (d.rainMmH / maxRain) * (plotH * 0.3);
+          return (
+            <rect key={`rain-${d.hour}`} x={getX(d.hour) - 5} y={padT}
+                  width={10} height={Math.max(1, barH)} rx="2" className="hydrograph__rain" />
+          );
+        })}
+
+        {/* Unmitigated surge */}
+        <path d={`${inflow} L ${getX(24)} ${baseY} L ${getX(1)} ${baseY} Z`} className="hydrograph__inflow-area" />
+        <path d={inflow} className="hydrograph__inflow-line" />
+
+        {/* Mitigated retention */}
+        <path d={`${outflow} L ${getX(24)} ${baseY} L ${getX(1)} ${baseY} Z`} className="hydrograph__outflow-area" />
+        <path d={outflow} className="hydrograph__outflow-line" />
+
+        {/* Hour axis */}
+        {[1, 6, 12, 18, 24].map((h) => (
+          <text key={`hx-${h}`} x={getX(h)} y={H - 12} textAnchor="middle" className="hydrograph__tick">
+            {String(h).padStart(2, '0')}:00
+          </text>
+        ))}
+
+        {/* Hover readout */}
+        {activePoint && (
+          <g>
+            <line x1={getX(activePoint.hour)} x2={getX(activePoint.hour)} y1={padT} y2={baseY}
+                  stroke="var(--text-muted)" strokeWidth="1" strokeDasharray="2,2" />
+            <circle cx={getX(activePoint.hour)} cy={getY(activePoint.inflowQ)} r="4.5"
+                    className="hydrograph__dot hydrograph__dot--inflow" />
+            <circle cx={getX(activePoint.hour)} cy={getY(activePoint.outflowQ)} r="4.5"
+                    className="hydrograph__dot hydrograph__dot--outflow" />
+          </g>
+        )}
+
+        {/* Invisible hit targets, one per hour */}
+        {dataPoints.map((d) => (
+          <rect key={`hit-${d.hour}`} x={getX(d.hour) - plotW / 46} y={padT}
+                width={plotW / 23} height={plotH} fill="transparent"
+                onMouseEnter={() => setHoveredHour(d.hour)}
+                onMouseLeave={() => setHoveredHour(null)} />
+        ))}
+      </svg>
+
+      {activePoint && (
+        <div className="hydrograph__tooltip">
+          <div className="hydrograph__tooltip-hour num">{String(activePoint.hour).padStart(2, '0')}:00</div>
+          <dl>
+            <div><dt>Rainfall</dt><dd className="num">{activePoint.rainMmH} mm/h</dd></div>
+            <div><dt>Unmitigated</dt><dd className="num is-danger">{activePoint.inflowQ} m³/s</dd></div>
+            <div><dt>Mitigated</dt><dd className="num is-ok">{activePoint.outflowQ} m³/s</dd></div>
+          </dl>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const StormHydrographCard = ({ rainIntensity = 180, mitigationPct = 0 }) => {
   const [hoveredHour, setHoveredHour] = useState(null);
+  const [expandedHour, setExpandedHour] = useState(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const chartHeight = 160;
-  const chartWidth = 460;
-  const padding = 30;
-
-  // Generate 24-hour hydrograph curve data dynamically based on rainfall & mitigation (Memoized)
-  const { dataPoints, maxQ, inflowPath, outflowPath } = useMemo(() => {
+  const { dataPoints, maxQ, maxRain, peakShavingPct, crestDelayH } = useMemo(() => {
     const hours = Array.from({ length: 24 }, (_, i) => i + 1);
     const stormFactor = rainIntensity / 180;
     const attenuationFactor = 1 - (Math.min(65, mitigationPct || 40) / 100) * 0.75;
@@ -31,206 +133,131 @@ const StormHydrographCard = ({ rainIntensity = 180, mitigationPct = 0 }) => {
       return { hour, rainMmH, inflowQ, outflowQ };
     });
 
-    const calculatedMaxQ = Math.max(...points.map(d => Math.max(d.inflowQ, d.outflowQ)), 50);
+    const peakIn = Math.max(...points.map((d) => d.inflowQ));
+    const peakOut = Math.max(...points.map((d) => d.outflowQ));
+    const peakInHour = points.find((d) => d.inflowQ === peakIn)?.hour ?? 8;
+    const peakOutHour = points.find((d) => d.outflowQ === peakOut)?.hour ?? 12;
 
-    const getXCoord = (h) => padding + ((h - 1) / 23) * (chartWidth - padding * 2);
-    const getYCoord = (v) => chartHeight - padding - (v / calculatedMaxQ) * (chartHeight - padding * 2);
-
-    const iPath = points.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getXCoord(d.hour)} ${getYCoord(d.inflowQ)}`).join(' ');
-    const oPath = points.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getXCoord(d.hour)} ${getYCoord(d.outflowQ)}`).join(' ');
-
-    return { dataPoints: points, maxQ: calculatedMaxQ, inflowPath: iPath, outflowPath: oPath };
+    return {
+      dataPoints: points,
+      maxQ: Math.max(peakIn, peakOut, 10) * 1.12,
+      maxRain: Math.max(...points.map((d) => d.rainMmH), 1),
+      // Reported from the curves rather than as a fixed caption.
+      peakShavingPct: Math.round(((peakIn - peakOut) / peakIn) * 100),
+      crestDelayH: (peakOutHour - peakInHour).toFixed(1)
+    };
   }, [rainIntensity, mitigationPct]);
 
-  const getX = (hour) => padding + ((hour - 1) / 23) * (chartWidth - padding * 2);
-  const getY = (val) => chartHeight - padding - (val / maxQ) * (chartHeight - padding * 2);
-
-  const activePoint = hoveredHour !== null ? dataPoints[hoveredHour - 1] : null;
+  const legend = (
+    <div className="hydrograph__legend">
+      <span><i className="swatch swatch--rain" />Rainfall hyetograph</span>
+      <span><i className="swatch swatch--inflow" />Unmitigated surge</span>
+      <span><i className="swatch swatch--outflow" />Mitigated retention</span>
+    </div>
+  );
 
   return (
-    <div style={{
-      background: '#FFFFFF',
-      borderRadius: '16px',
-      padding: '18px 20px',
-      border: '1px solid rgba(7, 23, 63, 0.1)',
-      boxShadow: '0 8px 24px rgba(7, 23, 63, 0.06)',
-      marginTop: '16px'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-        <div>
-          <h3 style={{ margin: 0, fontSize: '14px', color: '#07173F', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>📈 24-Hour Storm Hydrograph</span>
-            <span style={{ fontSize: '11px', background: '#EBF5FF', color: '#0042A6', padding: '2px 8px', borderRadius: '12px', fontWeight: '700' }}>
-              Civil Engineering Physics
-            </span>
-          </h3>
-          <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: '#64748B' }}>
-            Simulating stormwater peak discharge shaving & retention lag time
-          </p>
-        </div>
-
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <div style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', padding: '4px 8px', borderRadius: '6px', textAlign: 'center' }}>
-            <div style={{ fontSize: '9px', color: '#991B1B', fontWeight: '700', textTransform: 'uppercase' }}>Peak Shaving</div>
-            <div style={{ fontSize: '13px', fontWeight: '900', color: '#DC2626' }}>-57% Peak Flow</div>
+    <>
+      <section className="hydrograph">
+        <header className="hydrograph__head">
+          <div className="hydrograph__title">
+            <h3>24-hour storm hydrograph</h3>
+            <p>Peak discharge shaving and retention lag, SCS unit hydrograph</p>
           </div>
-          <div style={{ background: '#ECFDF5', border: '1px solid #6EE7B7', padding: '4px 8px', borderRadius: '6px', textAlign: 'center' }}>
-            <div style={{ fontSize: '9px', color: '#065F46', fontWeight: '700', textTransform: 'uppercase' }}>Flood Crest Delay</div>
-            <div style={{ fontSize: '13px', fontWeight: '900', color: '#059669' }}>+3.5 Hours</div>
+          <button className="btn-inline" onClick={() => setIsExpanded(true)}>Expand</button>
+        </header>
+
+        <div className="hydrograph__stats">
+          <div className="hydrograph__stat">
+            <span className="hydrograph__stat-label">Peak shaving</span>
+            <span className="hydrograph__stat-value num is-ok">−{peakShavingPct}%</span>
+          </div>
+          <div className="hydrograph__stat">
+            <span className="hydrograph__stat-label">Crest delay</span>
+            <span className="hydrograph__stat-value num">+{crestDelayH} h</span>
           </div>
         </div>
-      </div>
 
-      {/* SVG Chart */}
-      <div style={{ position: 'relative', width: '100%', overflowX: 'auto' }}>
-        <svg 
-          viewBox={`0 0 ${chartWidth} ${chartHeight}`} 
-          style={{ width: '100%', height: 'auto', display: 'block' }}
-          onMouseLeave={() => setHoveredHour(null)}
-        >
-          {/* Grid lines */}
-          {[0, 0.25, 0.5, 0.75, 1].map((frac, idx) => {
-            const y = chartHeight - padding - frac * (chartHeight - padding * 2);
-            return (
-              <g key={idx}>
-                <line x1={padding} y1={y} x2={chartWidth - padding} y2={y} stroke="#E2E8F0" strokeDasharray="3,3" />
-                <text x={padding - 6} y={y + 3} fontSize="9" fill="#94A3B8" textAnchor="end">
-                  {Math.round(frac * maxQ)}
-                </text>
-              </g>
-            );
-          })}
+        <HydrographChart
+          dataPoints={dataPoints} maxQ={maxQ} maxRain={maxRain}
+          hoveredHour={hoveredHour} setHoveredHour={setHoveredHour}
+        />
+        {legend}
+      </section>
 
-          {/* Rainfall Hyetograph Bars (Blue downward bars) */}
-          {dataPoints.map((d) => {
-            const barHeight = (d.rainMmH / 35) * 35;
-            return (
-              <rect
-                key={`rain-${d.hour}`}
-                x={getX(d.hour) - 4}
-                y={padding - 10}
-                width={8}
-                height={barHeight}
-                fill="rgba(2, 132, 199, 0.35)"
-                rx="2"
+      {isExpanded && (
+        <div className="hydrograph-modal__backdrop" onClick={() => setIsExpanded(false)} role="dialog" aria-modal="true">
+          <div className="hydrograph-modal" onClick={(e) => e.stopPropagation()}>
+            <header className="hydrograph-modal__head">
+              <div className="hydrograph__title">
+                <h3>24-hour storm hydrograph</h3>
+                <p>
+                  {rainIntensity} mm design storm · {mitigationPct > 0 ? `${mitigationPct}% runoff reduction applied` : 'no mitigation applied'}
+                </p>
+              </div>
+              <button className="hydrograph-modal__close" onClick={() => setIsExpanded(false)} aria-label="Close">✕</button>
+            </header>
+
+            <div className="hydrograph-modal__body">
+              <div className="hydrograph__stats hydrograph__stats--wide">
+                <div className="hydrograph__stat">
+                  <span className="hydrograph__stat-label">Peak shaving</span>
+                  <span className="hydrograph__stat-value num is-ok">−{peakShavingPct}%</span>
+                </div>
+                <div className="hydrograph__stat">
+                  <span className="hydrograph__stat-label">Crest delay</span>
+                  <span className="hydrograph__stat-value num">+{crestDelayH} h</span>
+                </div>
+                <div className="hydrograph__stat">
+                  <span className="hydrograph__stat-label">Peak unmitigated</span>
+                  <span className="hydrograph__stat-value num is-danger">
+                    {Math.max(...dataPoints.map((d) => d.inflowQ)).toFixed(1)} m³/s
+                  </span>
+                </div>
+                <div className="hydrograph__stat">
+                  <span className="hydrograph__stat-label">Peak mitigated</span>
+                  <span className="hydrograph__stat-value num is-ok">
+                    {Math.max(...dataPoints.map((d) => d.outflowQ)).toFixed(1)} m³/s
+                  </span>
+                </div>
+              </div>
+
+              <HydrographChart
+                dataPoints={dataPoints} maxQ={maxQ} maxRain={maxRain} tall
+                hoveredHour={expandedHour} setHoveredHour={setExpandedHour}
               />
-            );
-          })}
+              {legend}
 
-          {/* Unmitigated Inflow Curve (Red Area & Stroke) */}
-          <path
-            d={`${inflowPath} L ${getX(24)} ${chartHeight - padding} L ${getX(1)} ${chartHeight - padding} Z`}
-            fill="rgba(220, 38, 38, 0.12)"
-          />
-          <path
-            d={inflowPath}
-            fill="none"
-            stroke="#DC2626"
-            strokeWidth="2.5"
-          />
-
-          {/* Mitigated Outflow Curve (Green Area & Stroke) */}
-          <path
-            d={`${outflowPath} L ${getX(24)} ${chartHeight - padding} L ${getX(1)} ${chartHeight - padding} Z`}
-            fill="rgba(5, 150, 105, 0.18)"
-          />
-          <path
-            d={outflowPath}
-            fill="none"
-            stroke="#059669"
-            strokeWidth="2.5"
-            strokeDasharray="4,2"
-          />
-
-          {/* Hover hitboxes & circles */}
-          {dataPoints.map((d) => (
-            <g key={`hit-${d.hour}`} onMouseEnter={() => setHoveredHour(d.hour)} style={{ cursor: 'pointer' }}>
-              <rect
-                x={getX(d.hour) - 9}
-                y={0}
-                width={18}
-                height={chartHeight}
-                fill="transparent"
-              />
-              {hoveredHour === d.hour && (
-                <>
-                  <line
-                    x1={getX(d.hour)}
-                    y1={padding - 10}
-                    x2={getX(d.hour)}
-                    y2={chartHeight - padding}
-                    stroke="#64748B"
-                    strokeDasharray="2,2"
-                  />
-                  <circle cx={getX(d.hour)} cy={getY(d.inflowQ)} r="4" fill="#DC2626" stroke="#FFFFFF" strokeWidth="2" />
-                  <circle cx={getX(d.hour)} cy={getY(d.outflowQ)} r="4" fill="#059669" stroke="#FFFFFF" strokeWidth="2" />
-                </>
-              )}
-            </g>
-          ))}
-
-          {/* X Axis Labels */}
-          {[1, 6, 12, 18, 24].map((hr) => (
-            <text key={hr} x={getX(hr)} y={chartHeight - 8} fontSize="9" fill="#64748B" textAnchor="middle">
-              {hr}:00
-            </text>
-          ))}
-        </svg>
-
-        {/* Hover Tooltip Card */}
-        {activePoint && (
-          <div style={{
-            position: 'absolute',
-            top: '8px',
-            right: '12px',
-            background: 'rgba(15, 23, 42, 0.94)',
-            color: '#FFFFFF',
-            padding: '6px 12px',
-            borderRadius: '8px',
-            fontSize: '11px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-            pointerEvents: 'none'
-          }}>
-            <div><strong>Time: {activePoint.hour}:00 Hrs</strong></div>
-            <div style={{ color: '#38BDF8' }}>🌧️ Rain: {activePoint.rainMmH} mm/h</div>
-            <div style={{ color: '#F87171' }}>🔴 Unmitigated Flow: {activePoint.inflowQ} m³/s</div>
-            <div style={{ color: '#4ADE80' }}>🟢 Mitigated Flow: {activePoint.outflowQ} m³/s</div>
+              <table className="hydrograph__table">
+                <thead>
+                  <tr>
+                    <th>Hour</th>
+                    <th>Rainfall (mm/h)</th>
+                    <th>Unmitigated Q (m³/s)</th>
+                    <th>Mitigated Q (m³/s)</th>
+                    <th>Reduction</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dataPoints.map((d) => (
+                    <tr key={d.hour} className={expandedHour === d.hour ? 'is-active' : undefined}
+                        onMouseEnter={() => setExpandedHour(d.hour)}
+                        onMouseLeave={() => setExpandedHour(null)}>
+                      <td className="num">{String(d.hour).padStart(2, '0')}:00</td>
+                      <td className="num">{d.rainMmH}</td>
+                      <td className="num">{d.inflowQ}</td>
+                      <td className="num">{d.outflowQ}</td>
+                      <td className="num is-ok">−{Math.round(((d.inflowQ - d.outflowQ) / d.inflowQ) * 100)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* Legend & Summary Notes */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginTop: '10px',
-        paddingTop: '8px',
-        borderTop: '1px solid #E2E8F0',
-        fontSize: '11px',
-        color: '#475569'
-      }}>
-        <div style={{ display: 'flex', gap: '14px' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '10px', height: '10px', background: 'rgba(2, 132, 199, 0.5)', borderRadius: '2px' }}></span>
-            Rainfall Hyetograph
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '10px', height: '3px', background: '#DC2626' }}></span>
-            Unmitigated Surge (Q-Inflow)
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '10px', height: '3px', background: '#059669', borderTop: '1px dashed #059669' }}></span>
-            Mitigated Retention (Q-Outflow)
-          </span>
         </div>
-
-        <span style={{ color: '#1E3A8A', fontWeight: '700' }}>
-          🛡️ Retention Basin buffers 45,000 m³ floodwater
-        </span>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
 
-export default StormHydrographCard;
+export default React.memo(StormHydrographCard);

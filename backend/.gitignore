@@ -11,3 +11,7 @@ service-account-key.json
 .DS_Store
 .vscode/
 pyrightconfig.json
+
+.env
+.venv/
+__pycache__/

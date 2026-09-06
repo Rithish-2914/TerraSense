@@ -83,9 +83,9 @@ const ProcessingOverlay = ({ loading, simulationStep }) => {
         }}>
           <h2 style={{
             fontFamily: 'Fira Sans, sans-serif',
-            fontWeight: '900',
+            fontWeight: '700',
             fontSize: '32px',
-            color: '#07173F',
+            color: 'var(--text)',
             margin: '0 0 12px 0',
             textTransform: 'uppercase',
             letterSpacing: '1px'
@@ -95,7 +95,7 @@ const ProcessingOverlay = ({ loading, simulationStep }) => {
           <p style={{
             fontFamily: 'Overpass, sans-serif',
             fontSize: '16px',
-            color: '#0042A6',
+            color: 'var(--accent)',
             margin: 0,
             fontWeight: '600'
           }}>
@@ -122,8 +122,8 @@ const ProcessingOverlay = ({ loading, simulationStep }) => {
                              status === 'completed' ? 'rgba(46, 150, 245, 0.08)' : 
                              'rgba(255, 255, 255, 0.6)',
                   border: `2px solid ${
-                    status === 'active' ? '#EAFE07' : 
-                    status === 'completed' ? '#2E96F5' : 
+                    status === 'active' ? 'var(--warn)' : 
+                    status === 'completed' ? 'var(--accent)' : 
                     'rgba(7, 23, 63, 0.1)'
                   }`,
                   borderRadius: '16px',
@@ -134,12 +134,12 @@ const ProcessingOverlay = ({ loading, simulationStep }) => {
                   width: '48px',
                   height: '48px',
                   borderRadius: '12px',
-                  background: status === 'active' ? '#EAFE07' : 
-                             status === 'completed' ? '#2E96F5' : 
+                  background: status === 'active' ? 'var(--warn)' : 
+                             status === 'completed' ? 'var(--accent)' : 
                              'rgba(7, 23, 63, 0.1)',
-                  color: status === 'active' ? '#07173F' : 
+                  color: status === 'active' ? 'var(--text)' : 
                          status === 'completed' ? '#FFFFFF' : 
-                         '#0042A6',
+                         'var(--accent)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -169,7 +169,7 @@ const ProcessingOverlay = ({ loading, simulationStep }) => {
                     fontFamily: 'Fira Sans, sans-serif',
                     fontWeight: '700',
                     fontSize: '18px',
-                    color: '#07173F',
+                    color: 'var(--text)',
                     margin: '0 0 4px 0'
                   }}>
                     {step.title}
@@ -177,7 +177,7 @@ const ProcessingOverlay = ({ loading, simulationStep }) => {
                   <p style={{
                     fontFamily: 'Overpass, sans-serif',
                     fontSize: '14px',
-                    color: '#0042A6',
+                    color: 'var(--accent)',
                     margin: 0,
                     opacity: 0.9
                   }}>
@@ -195,7 +195,7 @@ const ProcessingOverlay = ({ loading, simulationStep }) => {
         }}>
           <div style={{
             fontSize: '12px',
-            color: '#0042A6',
+            color: 'var(--accent)',
             fontFamily: 'Overpass, sans-serif',
             fontWeight: '600',
             textTransform: 'uppercase',

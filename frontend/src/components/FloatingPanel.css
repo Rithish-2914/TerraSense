@@ -1,412 +1,576 @@
-/* ==========================================================================
-   TerraSense Municipal Digital Twin - Minimalist Enterprise Sidebar
-   ========================================================================== */
+/* ------------------------------------------------------------------
+   Control rail.
 
-.docked-sidebar-wrapper {
+   This used to be a 98vw × 95vh modal over a blurred backdrop, which hid
+   the map entirely - you couldn't watch the overlay respond while changing
+   a control. It's now docked to the right edge: the map stays visible and
+   interactive, and every change is visible as it happens.
+------------------------------------------------------------------ */
+
+.floating-panel-overlay {
   position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 480px;
-  max-width: 90vw;
-  height: 100vh;
-  z-index: 1000;
+  width: var(--w-rail);
+  padding: var(--s-3) var(--s-3) var(--s-3) 0;
+  z-index: var(--z-rail);
+  /* The container is only a positioning frame - clicks pass through to the
+     map everywhere except on the panel itself. */
+  pointer-events: none;
+  animation: railSlideIn var(--dur-slow) var(--ease) both;
+}
+
+.floating-panel-overlay.right-positioned {
+  padding-top: var(--s-3);
+}
+
+.floating-panel,
+.floating-panel-overlay.right-positioned .floating-panel,
+.floating-panel.right-positioned {
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
-  background: #FFFFFF;
-  border-left: 1px solid #E2E8F0;
-  box-shadow: -4px 0 24px rgba(15, 23, 42, 0.08);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-rail);
   overflow: hidden;
 }
 
-.docked-sidebar-wrapper.collapsed {
-  transform: translateX(100%);
-  box-shadow: none;
+@keyframes railSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
-/* Sidebar Toggle Edge Tab Button */
-.sidebar-edge-toggle {
-  position: fixed;
-  top: 20px;
-  right: 480px;
-  z-index: 1001;
-  background: #0F172A;
-  color: #FFFFFF;
-  border: 1px solid #334155;
-  border-right: none;
-  border-radius: 8px 0 0 8px;
-  padding: 8px 12px;
-  font-size: 11.5px;
+/* --- Header ----------------------------------------------------------- */
+/* Two rows: identity, then the action toolbar. The close and minimise
+   controls sit absolutely in the top-right so they never get pushed around
+   by however many actions the toolbar happens to hold. */
+.panel-header {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  padding: var(--s-4) 64px var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.panel-header::before {
+  display: none;
+}
+
+.panel-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  flex: 1 1 100%;
+}
+
+.panel-title {
+  min-width: 0;
+}
+
+.panel-title h1 {
+  font-size: var(--t-section);
   font-weight: 700;
-  cursor: pointer;
-  box-shadow: -2px 2px 10px rgba(15, 23, 42, 0.15);
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: var(--lh-tight);
+}
+
+.panel-title span {
+  display: block;
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  line-height: var(--lh-snug);
+}
+
+.panel-header-controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  transition: all 0.2s ease;
+  gap: var(--s-1);
+  flex: 1 1 100%;
+  margin-left: 0;
 }
 
-.sidebar-edge-toggle:hover {
-  background: #1E293B;
-  padding-left: 15px;
-}
-
-.sidebar-edge-toggle.collapsed-pos {
-  right: 0;
-  border-radius: 8px 0 0 8px;
-  background: #0F172A;
-}
-
-/* Sidebar Header */
-.sidebar-header {
-  padding: 16px 20px 12px 20px;
-  background: #0F172A;
-  color: #FFFFFF;
-  border-bottom: 1px solid #1E293B;
-  flex-shrink: 0;
-}
-
-.sidebar-header-top {
-  display: flex;
-  justify-content: space-between;
+.panel-action-btn {
+  display: inline-flex;
   align-items: center;
-  margin-bottom: 12px;
-}
-
-.sidebar-brand-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.sidebar-logo {
-  height: 24px;
-  width: auto;
-}
-
-.sidebar-brand-text h1 {
-  font-size: 15px;
-  font-weight: 800;
-  color: #FFFFFF;
-  margin: 0;
-  letter-spacing: 0.5px;
-}
-
-.sidebar-brand-text span {
-  font-size: 10px;
+  gap: var(--s-1);
+  padding: 5px 9px;
+  font-family: inherit;
+  font-size: var(--t-caption);
   font-weight: 600;
-  color: #94A3B8;
-  letter-spacing: 0.3px;
+  color: var(--text-secondary);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+.panel-action-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+/* The helpline is urgent, not loud: it keeps every other action's shape and
+   carries its meaning in the text colour and border alone. A solid red fill
+   here out-shouted the primary Run action sitting right below it. */
+.panel-action-btn.is-danger {
+  color: var(--danger);
+  border-color: rgba(194, 38, 27, 0.3);
+}
+.panel-action-btn.is-danger:hover {
+  color: var(--danger);
+  background: var(--danger-quiet);
+  border-color: var(--danger);
+}
+.panel-action-btn.active-audio {
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-quiet);
+}
+
+.audio-wave {
+  color: var(--accent);
+}
+
+.panel-control {
+  position: absolute;
+  top: var(--s-3);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+.panel-control.minimize {
+  right: 42px;
+}
+.panel-control.close {
+  right: var(--s-3);
+}
+.panel-control:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.panel-control.close:hover {
+  background: var(--danger-quiet);
+  color: var(--danger);
+}
+
+/* --- Tabs ------------------------------------------------------------- */
+.panel-tabs {
+  display: flex;
+  padding: 0 var(--s-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.panel-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: 1;
+  justify-content: center;
+  white-space: nowrap;
+  padding: var(--s-3) var(--s-2);
+  font-family: inherit;
+  font-size: var(--t-secondary);
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease);
+}
+.panel-tab:hover:not(:disabled) {
+  color: var(--text);
+}
+.panel-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+.panel-tab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tab-icon {
+  display: inline-flex;
+  opacity: 0.75;
+}
+.panel-tab.active .tab-icon {
+  opacity: 1;
+}
+.tab-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* --- Content ---------------------------------------------------------- */
+.panel-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s-5) var(--s-4);
+  background: var(--surface);
+}
+
+.panel-content::-webkit-scrollbar {
+  width: 10px;
+}
+.panel-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.panel-content::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 3px solid var(--surface);
+  border-radius: var(--r-full);
+}
+.panel-content::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.tab-content {
   display: block;
 }
 
-.sidebar-collapse-btn {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #FFFFFF;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 12px;
-  transition: background 0.15s;
+/* A single column in the rail - the old multi-column grids don't fit. */
+.simulation-content,
+.analysis-grid,
+.analysis-row,
+.solutions-grid,
+.solutions-row,
+.solutions-full-width {
+  display: block;
+}
+.analysis-row .section,
+.solutions-row .section {
+  margin-bottom: var(--s-6);
 }
 
-.sidebar-collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-/* Quick Actions Row */
-.sidebar-quick-actions {
+/* --- Status ----------------------------------------------------------- */
+.status-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  gap: var(--s-1);
 }
 
-.sidebar-action-btn {
-  padding: 6px 4px;
-  border-radius: 6px;
-  font-size: 10.5px;
-  font-weight: 700;
-  cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: #F8FAFC;
+.status-item {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  transition: all 0.15s ease;
-}
-
-.sidebar-action-btn:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.sidebar-action-btn.emergency-btn:hover {
-  background: #DC2626;
-  border-color: #DC2626;
-}
-
-.sidebar-action-btn.voice-btn.active-audio {
-  background: #DC2626;
-  border-color: #DC2626;
-  color: #FFFFFF;
-}
-
-/* Segmented Navigation Tabs */
-.sidebar-tabs {
-  display: flex;
-  background: #F1F5F9;
-  padding: 4px;
-  gap: 4px;
-  border-bottom: 1px solid #E2E8F0;
-  flex-shrink: 0;
-}
-
-.sidebar-tab-btn {
-  flex: 1;
-  padding: 7px 10px;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #64748B;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sidebar-tab-btn:hover:not(:disabled) {
-  color: #0F172A;
-}
-
-.sidebar-tab-btn.active {
-  background: #FFFFFF;
-  color: #0F172A;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.sidebar-tab-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* Scrollable Body */
-.sidebar-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  background: #F8FAFC;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* Section Cards */
-.gov-section-card {
-  background: #FFFFFF;
-  border: 1px solid #E2E8F0;
-  border-radius: 10px;
-  padding: 14px 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-}
-
-.gov-section-header {
-  display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  transition: background var(--dur-fast) var(--ease);
+}
+.status-item:hover {
+  background: var(--surface-hover);
+}
+.status-item.connected {
+  border-left-color: var(--ok);
+}
+.status-item.warning {
+  border-left-color: var(--warn);
+}
+.status-item.error {
+  border-left-color: var(--danger);
 }
 
-.gov-section-header h3 {
-  font-size: 12.5px;
-  font-weight: 800;
-  color: #0F172A;
-  margin: 0;
-  letter-spacing: 0.2px;
+.status-label {
+  font-size: var(--t-secondary);
+  color: var(--text-secondary);
+}
+.status-value {
+  font-size: var(--t-secondary);
+  font-weight: 600;
+  color: var(--text);
 }
 
-.gov-chip {
-  font-size: 9.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: #F1F5F9;
-  color: #475569;
+.status-item.connected .status-value {
+  color: var(--ok);
+}
+.status-item.warning .status-value {
+  color: var(--warn);
+}
+.status-item.error .status-value {
+  color: var(--danger);
 }
 
-/* Status Grid */
-.status-grid-compact {
+/* --- Study area ------------------------------------------------------- */
+.plan-upload {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--s-3);
 }
 
-.status-box {
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  border-radius: 6px;
-  padding: 8px 10px;
+.current-plan {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
 }
 
-.status-box-label {
-  font-size: 9.5px;
-  font-weight: 700;
-  color: #64748B;
-  margin-bottom: 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+.plan-label {
+  font-size: var(--t-secondary);
+  color: var(--text-secondary);
+}
+.plan-name {
+  font-family: var(--font-mono);
+  font-size: var(--t-secondary);
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
 }
 
-.status-box-val {
-  font-size: 11.5px;
-  font-weight: 800;
+/* --- Run button ------------------------------------------------------- */
+.btn-analysis {
   display: flex;
   align-items: center;
-  gap: 5px;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.status-dot.online {
-  background: #059669;
-}
-
-.status-dot.offline {
-  background: #DC2626;
-}
-
-/* Area Select Row */
-.area-select-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.area-select-info {
-  flex: 1;
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #0F172A;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.area-upload-btn {
-  background: #F1F5F9;
-  border: 1px solid #CBD5E1;
-  color: #0F172A;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.area-upload-btn:hover {
-  background: #E2E8F0;
-}
-
-/* Run Button */
-.btn-run-analysis-gov {
+  justify-content: center;
+  gap: var(--s-2);
   width: 100%;
-  background: #0F172A;
-  color: #FFFFFF;
-  border: 1px solid #1E293B;
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 12.5px;
-  font-weight: 800;
+  padding: 11px 16px;
+  font-family: inherit;
+  font-size: var(--t-body);
+  font-weight: 600;
+  color: var(--text-inverse);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--r-md);
   cursor: pointer;
-  transition: background 0.15s;
-  letter-spacing: 0.3px;
+  transition: background var(--dur-fast) var(--ease);
 }
-
-.btn-run-analysis-gov:hover:not(:disabled) {
-  background: #1E293B;
+.btn-analysis:hover:not(:disabled) {
+  background: var(--accent-hover);
 }
-
-.btn-run-analysis-gov:disabled {
-  opacity: 0.6;
+.btn-analysis:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
-
-/* Weather Sync Button */
-.weather-sync-btn {
-  background: #0F172A;
-  color: #FFFFFF;
-  border: none;
-  padding: 4px 9px;
-  border-radius: 5px;
-  font-size: 10.5px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s;
+.btn-analysis.loading {
+  background: var(--accent-hover);
 }
 
-.weather-sync-btn:hover:not(:disabled) {
-  background: #1E293B;
+/* --- Processing steps ------------------------------------------------- */
+.processing-section {
+  margin-top: var(--s-3);
 }
-
-/* Scenario Grid */
-.scenario-grid-gov {
+.processing-steps {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: var(--s-1);
 }
 
-.scenario-card-btn {
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  padding: 10px;
-  cursor: pointer;
-  transition: all 0.15s;
-  text-align: left;
+.processing-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  transition: background var(--dur-base) var(--ease);
+}
+.processing-step.active {
+  background: var(--accent-quiet);
 }
 
-.scenario-card-btn:hover {
-  border-color: #94A3B8;
-  background: #FFFFFF;
+.step-indicator {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  flex: none;
+  font-size: var(--t-caption);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-full);
+  color: var(--text-muted);
+}
+.processing-step.active .step-indicator {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.processing-step.completed .step-indicator {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.processing-step.pending .step-indicator {
+  opacity: 0.6;
 }
 
-.scenario-card-btn.active {
-  border-color: #0F172A;
-  background: #FFFFFF;
-  box-shadow: 0 0 0 1px #0F172A;
+.step-content {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.step-title {
+  font-size: var(--t-secondary);
+  font-weight: 600;
+  color: var(--text);
+}
+.step-desc {
+  font-size: var(--t-caption);
+  color: var(--text-muted);
+  line-height: var(--lh-snug);
+}
+.processing-step.pending .step-title {
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
-.scenario-card-title {
-  font-size: 11.5px;
-  font-weight: 800;
-  color: #0F172A;
-  margin-bottom: 2px;
+.spinner-small {
+  width: 11px;
+  height: 11px;
+  border: 1.5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: var(--r-full);
+  animation: spin 0.8s linear infinite;
 }
 
-.scenario-card-sub {
-  font-size: 10px;
-  color: #64748B;
-  line-height: 1.3;
+/* --- Detail rows ------------------------------------------------------ */
+.detail-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.detail-item:last-child {
+  border-bottom: none;
+}
+.detail-label {
+  font-size: var(--t-secondary);
+  color: var(--text-secondary);
+}
+.detail-value {
+  font-size: var(--t-secondary);
+  font-weight: 600;
+  color: var(--text);
+  text-align: right;
+}
+
+.impact-section {
+  margin-top: var(--s-4);
+}
+
+/* Keep Leaflet's own controls clear of the rail. */
+.leaflet-bottom.leaflet-left {
+  z-index: var(--z-map-chrome);
+}
+
+/* --- Narrow screens: bottom sheet, so the map keeps the top half ------- */
+@media (max-width: 900px) {
+  .floating-panel-overlay {
+    top: auto;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100vw;
+    height: 56vh;
+    padding: 0 var(--s-2) var(--s-2);
+    animation: sheetSlideIn var(--dur-slow) var(--ease) both;
+  }
+
+  .floating-panel {
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+  }
+
+  .panel-tabs {
+    padding: 0 var(--s-3);
+  }
+  .panel-content {
+    padding: var(--s-4) var(--s-3);
+  }
+  .panel-header {
+    padding: var(--s-3);
+  }
+
+  /* Secondary header actions get out of the way on small screens. */
+  .panel-header-controls .panel-action-btn:nth-child(n + 3) {
+    display: none;
+  }
+}
+
+@keyframes sheetSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- Small readout grid (live weather, and anything like it) ------------ */
+.reading-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s-2);
+  margin: var(--s-3) 0 0;
+}
+
+.reading {
+  padding: var(--s-2);
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+
+.reading__label {
+  font-size: var(--t-label);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.reading__value {
+  margin-top: 1px;
+  font-size: var(--t-title);
+  font-weight: 600;
+  color: var(--text);
+}
+.reading__value.is-alert {
+  color: var(--danger);
 }

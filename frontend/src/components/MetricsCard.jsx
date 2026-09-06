@@ -9,22 +9,22 @@ const MetricsCard = ({ metrics, scenario, loading }) => {
   
   if (runoffIncrease <= 10) {
     riskLevel = 'Low';
-    riskColor = '#0284C7'; // Blue
+    riskColor = 'var(--accent)'; // NASA Blue
   } else if (runoffIncrease <= 30) {
     riskLevel = 'Medium';
-    riskColor = '#D97706'; // Amber
+    riskColor = 'var(--warn)'; // NASA Yellow
   } else {
     riskLevel = 'High';
-    riskColor = '#DC2626'; // Crimson Red
+    riskColor = 'var(--danger)'; // NASA Red
   }
 
   // Heat stress color coding
   const getHeatStressColor = (level) => {
     switch(level) {
-      case 'Low': return '#0284C7';
-      case 'Medium': return '#D97706'; 
-      case 'High': return '#DC2626';
-      default: return '#64748B';
+      case 'Low': return 'var(--accent)';
+      case 'Medium': return 'var(--warn)'; 
+      case 'High': return 'var(--danger)';
+      default: return '#999';
     }
   };
 
@@ -83,7 +83,7 @@ const MetricsCard = ({ metrics, scenario, loading }) => {
       {loading && (
         <div style={{
           fontSize: '11px',
-          color: '#0042A6',
+          color: 'var(--accent)',
           textAlign: 'center',
           marginTop: '8px',
           fontFamily: 'Overpass, sans-serif',
